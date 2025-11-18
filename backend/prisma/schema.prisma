@@ -1,0 +1,697 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  CANCELLED
+  EXPIRED
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MaterialType {
+  NOTES
+  PDF
+  VIDEO
+  DIAGRAM
+  FLASHCARD
+  USER_UPLOADED
+}
+
+enum QuestionType {
+  MCQ
+  SAQ
+  IMAGE_BASED
+  TRUE_FALSE
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TestType {
+  PRACTICE
+  MOCK
+  CUSTOM
+}
+
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum TransactionType {
+  EARNED
+  SPENT
+  BONUS
+  REFUND
+  ADJUSTMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum NoteProcStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// ==================== USER MANAGEMENT ====================
+
+model User {
+  id                    String              @id @default(cuid())
+  email                 String              @unique
+  name                  String
+  passwordHash          String?
+  authProvider          AuthProvider        @default(EMAIL)
+  providerId            String?
+  emailVerified         Boolean             @default(false)
+  profilePicture        String?
+  mbbsYear              Int?
+  college               String?
+  university            String?
+  phoneNumber           String?
+  dateOfBirth           DateTime?
+  gender                String?
+
+  // Token Management
+  currentTokenBalance   Int                 @default(100)
+  totalTokensEarned     Int                 @default(100)
+  totalTokensSpent      Int                 @default(0)
+
+  // Subscription
+  subscriptionId        String?
+  subscriptionStatus    SubscriptionStatus  @default(INACTIVE)
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+
+  // Account Status
+  lastLogin             DateTime?
+  loginCount            Int                 @default(0)
+  isActive              Boolean             @default(true)
+  isBanned              Boolean             @default(false)
+  banReason             String?
+  role                  UserRole            @default(STUDENT)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+
+  // Relations
+  subscriptions         Subscription[]
+  tokenTransactions     TokenTransaction[]
+  testAttempts          TestAttempt[]
+  bookmarks             Bookmark[]
+  aiConversations       AIConversation[]
+  studySessions         StudySession[]
+  userNotes             UserNote[]
+  notifications         Notification[]
+  paymentTransactions   PaymentTransaction[]
+  adminUser             AdminUser?
+  createdMaterials      StudyMaterial[]     @relation("CreatedMaterials")
+  createdQuestions      Question[]          @relation("CreatedQuestions")
+  auditLogs             AuditLog[]
+
+  @@index([email])
+  @@index([subscriptionStatus])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model AdminUser {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String
+  permissions Json?
+  isActive    Boolean  @default(true)
+  lastActive  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+// ==================== SUBSCRIPTION & BILLING ====================
+
+model SubscriptionPlan {
+  id              String         @id @default(cuid())
+  name            String         @unique
+  displayName     String
+  description     String?
+  price           Decimal        @db.Decimal(10, 2)
+  currency        String         @default("INR")
+  tokenAllocation Int
+  billingCycle    String
+  features        Json
+  isActive        Boolean        @default(true)
+  sortOrder       Int?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  subscriptions   Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId            String
+  plan              SubscriptionPlan   @relation(fields: [planId], references: [id])
+  status            SubscriptionStatus @default(ACTIVE)
+  startDate         DateTime
+  endDate           DateTime
+  autoRenew         Boolean            @default(true)
+  paymentMethod     String?
+  razorpaySubscriptionId String?        @unique
+  lastPaymentDate   DateTime?
+  nextBillingDate   DateTime?
+  cancellationDate  DateTime?
+  cancellationReason String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  paymentTransactions PaymentTransaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+  @@map("subscriptions")
+}
+
+model PaymentTransaction {
+  id                   String        @id @default(cuid())
+  userId               String
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId       String?
+  subscription         Subscription? @relation(fields: [subscriptionId], references: [id])
+  amount               Decimal       @db.Decimal(10, 2)
+  currency             String        @default("INR")
+  paymentMethod        String?
+  paymentGateway       String        @default("razorpay")
+  razorpayPaymentId    String?       @unique
+  razorpayOrderId      String?
+  razorpaySignature    String?
+  status               PaymentStatus @default(PENDING)
+  description          String?
+  invoiceUrl           String?
+  metadata             Json?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_transactions")
+}
+
+// ==================== TOKEN SYSTEM ====================
+
+model TokenTransaction {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionType TransactionType
+  amount          Int
+  balanceAfter    Int
+  feature         String?
+  referenceId     String?
+  description     String?
+  createdAt       DateTime        @default(now())
+
+  @@index([userId])
+  @@index([transactionType])
+  @@index([createdAt])
+  @@map("token_transactions")
+}
+
+// ==================== CONTENT MANAGEMENT ====================
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  iconUrl     String?
+  color       String?
+  mbbsYear    Int?
+  sortOrder   Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  topics      Topic[]
+
+  @@index([mbbsYear])
+  @@map("subjects")
+}
+
+model Topic {
+  id                  String          @id @default(cuid())
+  subjectId           String
+  subject             Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  parentTopicId       String?
+  parentTopic         Topic?          @relation("TopicHierarchy", fields: [parentTopicId], references: [id])
+  childTopics         Topic[]         @relation("TopicHierarchy")
+  name                String
+  description         String?
+  difficultyLevel     DifficultyLevel?
+  estimatedStudyTime  Int?
+  sortOrder           Int?
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  studyMaterials      StudyMaterial[]
+  questions           Question[]
+  bookmarks           Bookmark[]
+  studySessions       StudySession[]
+
+  @@index([subjectId])
+  @@index([parentTopicId])
+  @@map("topics")
+}
+
+model StudyMaterial {
+  id           String       @id @default(cuid())
+  topicId      String
+  topic        Topic        @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title        String
+  materialType MaterialType
+  content      String?      @db.Text
+  fileUrl      String?
+  thumbnailUrl String?
+  source       String?
+  tokenCost    Int          @default(0)
+  viewCount    Int          @default(0)
+  likeCount    Int          @default(0)
+  isPremium    Boolean      @default(false)
+  isActive     Boolean      @default(true)
+  createdById  String?
+  createdBy    User?        @relation("CreatedMaterials", fields: [createdById], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  bookmarks    Bookmark[]
+
+  @@index([topicId])
+  @@index([materialType])
+  @@map("study_materials")
+}
+
+// ==================== USER UPLOADED NOTES ====================
+
+model UserNote {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title             String
+  originalFileName  String
+  fileUrl           String
+  fileType          String
+  fileSize          Int
+
+  // Processing
+  processingStatus  NoteProcStatus @default(PENDING)
+  extractedText     String?        @db.Text
+  formattedNotes    String?        @db.Text
+  summary           String?        @db.Text
+
+  // Metadata
+  pageCount         Int?
+  wordCount         Int?
+  tags              String[]
+
+  // AI Processing
+  aiProcessingCost  Decimal?       @db.Decimal(10, 6)
+  processingTime    Int?
+  errorMessage      String?
+
+  // Settings
+  isPublic          Boolean        @default(false)
+  allowDownload     Boolean        @default(true)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([processingStatus])
+  @@index([createdAt])
+  @@map("user_notes")
+}
+
+// ==================== QUESTIONS & TESTS ====================
+
+model Question {
+  id              String          @id @default(cuid())
+  topicId         String?
+  topic           Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  questionType    QuestionType
+  questionText    String          @db.Text
+  questionImageUrl String?
+  explanation     String?         @db.Text
+  difficultyLevel DifficultyLevel @default(MEDIUM)
+  tags            String[]
+  source          String?
+  usageCount      Int             @default(0)
+  correctAttempts Int             @default(0)
+  totalAttempts   Int             @default(0)
+  isActive        Boolean         @default(true)
+  isApproved      Boolean         @default(false)
+  createdById     String?
+  createdBy       User?           @relation("CreatedQuestions", fields: [createdById], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  options         QuestionOption[]
+  testQuestions   TestQuestion[]
+  testAnswers     TestAnswer[]
+  bookmarks       Bookmark[]
+
+  @@index([topicId])
+  @@index([questionType])
+  @@index([difficultyLevel])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id              String   @id @default(cuid())
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionText      String   @db.Text
+  optionImageUrl  String?
+  isCorrect       Boolean  @default(false)
+  explanation     String?  @db.Text
+  sortOrder       Int
+
+  testAnswers     TestAnswer[]
+
+  @@index([questionId])
+  @@map("question_options")
+}
+
+model Test {
+  id              String          @id @default(cuid())
+  userId          String
+  title           String?
+  testType        TestType        @default(PRACTICE)
+  subjectIds      String[]
+  topicIds        String[]
+  totalQuestions  Int
+  duration        Int?
+  difficultyLevel DifficultyLevel?
+  status          TestStatus      @default(PUBLISHED)
+  tokenCost       Int?
+  createdAt       DateTime        @default(now())
+
+  testQuestions   TestQuestion[]
+  testAttempts    TestAttempt[]
+
+  @@index([userId])
+  @@index([testType])
+  @@map("tests")
+}
+
+model TestQuestion {
+  id         String   @id @default(cuid())
+  testId     String
+  test       Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  order      Int
+  marks      Decimal  @default(1.0) @db.Decimal(5, 2)
+
+  @@unique([testId, questionId])
+  @@index([testId])
+  @@map("test_questions")
+}
+
+model TestAttempt {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId     String
+  test       Test          @relation(fields: [testId], references: [id], onDelete: Cascade)
+  startTime  DateTime
+  endTime    DateTime?
+  timeTaken  Int?
+  totalScore Decimal?      @db.Decimal(5, 2)
+  maxScore   Decimal?      @db.Decimal(5, 2)
+  percentage Decimal?      @db.Decimal(5, 2)
+  status     AttemptStatus @default(IN_PROGRESS)
+  createdAt  DateTime      @default(now())
+
+  testAnswers TestAnswer[]
+
+  @@index([userId])
+  @@index([testId])
+  @@index([createdAt])
+  @@map("test_attempts")
+}
+
+model TestAnswer {
+  id               String          @id @default(cuid())
+  testAttemptId    String
+  testAttempt      TestAttempt     @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId String?
+  selectedOption   QuestionOption? @relation(fields: [selectedOptionId], references: [id])
+  answerText       String?         @db.Text
+  isCorrect        Boolean?
+  marksObtained    Decimal?        @db.Decimal(5, 2)
+  timeTaken        Int?
+  isFlagged        Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+
+  @@index([testAttemptId])
+  @@index([questionId])
+  @@map("test_answers")
+}
+
+// ==================== AI & ASSISTANT ====================
+
+model AIConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  messages  AIMessage[]
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id              String         @id @default(cuid())
+  conversationId  String
+  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String
+  role            String
+  content         String         @db.Text
+  tokensUsed      Int?
+  model           String?
+  aiCost          Decimal?       @db.Decimal(10, 6)
+  createdAt       DateTime       @default(now())
+
+  @@index([conversationId])
+  @@index([userId])
+  @@map("ai_messages")
+}
+
+// ==================== BOOKMARKS & STUDY SESSIONS ====================
+
+model Bookmark {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarkableType String
+  bookmarkableId   String
+  notes            String?        @db.Text
+  tags             String[]
+  createdAt        DateTime       @default(now())
+
+  studyMaterial    StudyMaterial? @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_studyMaterial_fkey")
+  question         Question?      @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_question_fkey")
+  topic            Topic?         @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_topic_fkey")
+
+  @@unique([userId, bookmarkableType, bookmarkableId])
+  @@index([userId])
+  @@index([bookmarkableType, bookmarkableId])
+  @@map("bookmarks")
+}
+
+model StudySession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId    String?
+  topic      Topic?    @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  startTime  DateTime
+  endTime    DateTime?
+  duration   Int?
+  tokensUsed Int       @default(0)
+  activities Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([topicId])
+  @@map("study_sessions")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String               @db.Text
+  actionUrl String?
+  isRead    Boolean              @default(false)
+  priority  NotificationPriority @default(MEDIUM)
+  createdAt DateTime             @default(now())
+  readAt    DateTime?
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ==================== AUDIT & LOGS ====================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String?
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model APILog {
+  id            String   @id @default(cuid())
+  method        String
+  path          String
+  statusCode    Int
+  requestBody   Json?
+  responseBody  Json?
+  userId        String?
+  ipAddress     String?
+  userAgent     String?  @db.Text
+  duration      Int?
+  errorMessage  String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([path])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@map("api_logs")
+}
+
+// ==================== ANALYTICS ====================
+
+model FeatureUsageAnalytics {
+  id          String   @id @default(cuid())
+  userId      String?
+  featureName String
+  usageCount  Int      @default(1)
+  tokensSpent Int      @default(0)
+  date        DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, featureName, date])
+  @@index([userId])
+  @@index([date])
+  @@map("feature_usage_analytics")
+}
+
+// ==================== SYSTEM SETTINGS ====================
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  subject   String
+  body      String   @db.Text
+  variables String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  dataType    String   @default("string")
+  isPublic    Boolean  @default(false)
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}

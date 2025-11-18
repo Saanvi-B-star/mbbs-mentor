@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run prisma:generate:*)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(kill:*)",
+      "Bash(awk:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npm run prisma:migrate:*)",
+      "Bash(ACCESS_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWhrYmZ4bWcwMDAxeWJsZHJma29iNmIzIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NjIyNDU0NjgsImV4cCI6MTc2NDgzNzQ2OH0.mrRB1cEHuuTtbRB5ugp_HiECssBuPuksxasUTE9Bcak\":*)",
+      "Bash(REFRESH_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWhrYmZ4bWcwMDAxeWJsZHJma29iNmIzIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NjIyNDU0NjgsImV4cCI6MTc2NDgzNzQ2OH0.T0SXiqy5UIUw71OvJi_oS5TN22EAJeT8t56GKktpSeI\")",
+      "Bash(ACCESS_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWhrYmZ4bWcwMDAxeWJsZHJma29iNmIzIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NjIyNDU0NjgsImV4cCI6MTc2NDgzNzQ2OH0.mrRB1cEHuuTtbRB5ugp_HiECssBuPuksxasUTE9Bcak\" REFRESH_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWhrYmZ4bWcwMDAxeWJsZHJma29iNmIzIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NjIyNDU0NjgsImV4cCI6MTc2NDgzNzQ2OH0.T0SXiqy5UIUw71OvJi_oS5TN22EAJeT8t56GKktpSeI\")",
+      "Bash(echo \"=== TEST 3: POST /auth/refresh ===\" curl -s -X POST http://localhost:5001/api/v1/auth/refresh -H \"Content-Type: application/json\" -d \"{\"\"refreshToken\"\":\"\"$REFRESH_TOKEN\"\"}\")",
+      "Bash(echo -e \"\\n=== TEST 4: GET /auth/me (Protected) ===\" curl -s -X GET http://localhost:5001/api/v1/auth/me -H \"Authorization: Bearer $ACCESS_TOKEN\")",
+      "Bash(echo -e \"\\n=== TEST 5: POST /auth/change-password (Protected) ===\" curl -s -X POST http://localhost:5001/api/v1/auth/change-password -H \"Authorization: Bearer $ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d \"{\"\"currentPassword\"\":\"\"SecurePass123@\"\",\"\"newPassword\"\":\"\"NewSecurePass123@\"\"}\")",
+      "Bash(echo -e \"\\n=== TEST 6: POST /auth/forgot-password ===\" curl -s -X POST http://localhost:5001/api/v1/auth/forgot-password -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"student@example.com\"\"}\")",
+      "Bash(echo -e \"\\n=== TEST 7: POST /auth/logout (Protected) ===\" curl -s -X POST http://localhost:5001/api/v1/auth/logout -H \"Authorization: Bearer $ACCESS_TOKEN\")",
+      "Bash(NEW_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWhrYmZ4bWcwMDAxeWJsZHJma29iNmIzIiwiZW1haWwiOiJzdHVkZW50QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NjIyNDU1MjYsImV4cCI6MTc2NDgzNzUyNn0.umyMAKvCKQJGTdpu39S9ql9E7Q86GNSeDHRddOZQ6RM\")",
+      "Bash(echo \"=== GET /auth/me ===\" curl -s -X GET http://localhost:5001/api/v1/auth/me -H \"Authorization: Bearer $NEW_TOKEN\")",
+      "Bash(echo -e \"\\n=== POST /auth/change-password ===\" curl -s -X POST http://localhost:5001/api/v1/auth/change-password -H \"Authorization: Bearer $NEW_TOKEN\" -H \"Content-Type: application/json\" -d '{\"\"\"\"currentPassword\"\"\"\":\"\"\"\"SecurePass123@\"\"\"\",\"\"\"\"newPassword\"\"\"\":\"\"\"\"NewSecurePass123@\"\"\"\"}')",
+      "Bash(echo -e \"\\n=== POST /auth/logout ===\" curl -s -X POST http://localhost:5001/api/v1/auth/logout -H \"Authorization: Bearer $NEW_TOKEN\")",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
