@@ -325,6 +325,7 @@ model StudyMaterial {
   title        String
   materialType MaterialType
   content      String?      @db.Text
+  summary      String?      @db.Text
   fileUrl      String?
   thumbnailUrl String?
   source       String?

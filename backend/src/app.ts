@@ -19,8 +19,13 @@ const app: Application = express();
 
 // ==================== SECURITY MIDDLEWARE ====================
 
-// Helmet - Security headers
-app.use(helmet());
+// Helmet - Security headers with CSP configured for static assets
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false, // Disable CSP to allow images from same origin
+  })
+);
 
 // CORS - Cross-Origin Resource Sharing
 app.use(
@@ -37,6 +42,15 @@ app.use(
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ==================== STATIC FILES ====================
+
+import path from 'path';
+// Serve static files from public directory
+// Mount at /api/v1 to match frontend expectation (NEXT_PUBLIC_API_URL + fileUrl)
+app.use('/api/v1', express.static(path.join(__dirname, '../public')));
+// Also mount at root for direct access
+app.use(express.static(path.join(__dirname, '../public')));
 
 // ==================== COMPRESSION ====================
 
