@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Plus, Search, BookOpen } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("all");
 
   const notes = [
     {
@@ -40,104 +46,136 @@ export default function NotesPage() {
     },
   ];
 
+  const subjects = [
+    { value: "all", label: "All Subjects" },
+    { value: "anatomy", label: "Anatomy" },
+    { value: "physiology", label: "Physiology" },
+    { value: "pharmacology", label: "Pharmacology" },
+    { value: "pathology", label: "Pathology" },
+  ];
+
+  const filteredNotes = notes.filter((note) => {
+    const matchesSearch = note.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesSubject =
+      selectedSubject === "all" ||
+      note.subject.toLowerCase() === selectedSubject;
+    return matchesSearch && matchesSubject;
+  });
+
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Notes</h1>
+          <h1 className="text-4xl font-bold text-gray-900">📝 My Notes</h1>
           <p className="text-gray-600 mt-2">
             Organize and review your medical notes
           </p>
         </div>
-        <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-          + Create Note
-        </button>
+        <Button className="gap-2 rounded-full bg-blue-600 hover:bg-blue-700 px-6 py-2 h-auto">
+          <Plus className="h-4 w-4" />
+          Create Note
+        </Button>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
+      <Card className="shadow-sm border-gray-200 rounded-2xl">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-900 font-medium hover:border-gray-400 transition-colors"
+            >
+              {subjects.map((subject) => (
+                <option key={subject.value} value={subject.value}>
+                  {subject.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-            <option>All Subjects</option>
-            <option>Anatomy</option>
-            <option>Physiology</option>
-            <option>Pharmacology</option>
-            <option>Pathology</option>
-          </select>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Notes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {notes.map((note) => (
-          <div
-            key={note.id}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition cursor-pointer"
-          >
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                {note.title}
-              </h3>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {note.content}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {note.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>{note.subject}</span>
-              <span>{note.lastModified}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State (when no notes) */}
-      {notes.length === 0 && (
-        <div className="text-center py-16">
-          <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="h-8 w-8 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      {filteredNotes.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredNotes.map((note) => (
+            <Card
+              key={note.id}
+              className="shadow-sm border-gray-200 rounded-2xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group overflow-hidden"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+              <CardHeader className="pb-3 bg-gradient-to-br from-blue-50 to-transparent">
+                <div className="flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-xs font-medium rounded-full"
+                  >
+                    {note.subject}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {note.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {note.content}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {note.tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="rounded-full px-3 py-1 text-xs font-medium border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500">
+                  <span className="font-medium">{note.subject}</span>
+                  <span>{note.lastModified}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="text-center py-16 px-6">
+          <div className="h-20 w-20 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <BookOpen className="h-10 w-10 text-blue-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
             No notes yet
           </h3>
-          <p className="text-gray-600 mb-6">
-            Create your first note to get started
+          <p className="text-gray-600 mb-8 max-w-sm mx-auto">
+            Create your first note to start organizing your medical studies
           </p>
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-            Create Note
-          </button>
+          <Button className="gap-2 rounded-full bg-blue-600 hover:bg-blue-700 px-6 py-2 h-auto">
+            <Plus className="h-4 w-4" />
+            Create Your First Note
+          </Button>
         </div>
       )}
     </div>
