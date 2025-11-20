@@ -12,20 +12,22 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, isLoading } = useAuthStore();
+  const { user, logout, isLoading, isHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Only redirect if state has been hydrated and no user is found
+    if (isHydrated && !isLoading && !user) {
       router.push("/login");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isHydrated, router]);
 
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
-  if (isLoading || !user) {
+  // Show loading while hydrating or if no user after hydration
+  if (!isHydrated || isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
