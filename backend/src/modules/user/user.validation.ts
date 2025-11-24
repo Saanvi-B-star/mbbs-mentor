@@ -14,6 +14,7 @@ export const updateUserSchema = z.object({
     mbbsYear: z.number().int().min(1).max(5).optional(),
     college: z.string().optional(),
     university: z.string().optional(),
+    batchYear: z.number().int().min(1990).max(new Date().getFullYear()).optional(),
     phoneNumber: z
       .string()
       .regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number format')
