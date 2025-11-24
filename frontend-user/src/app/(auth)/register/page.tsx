@@ -57,12 +57,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await apiClient.post("/auth/register", {
+      const response = await apiClient.post("/auth/register", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-      router.push("/login?registered=true");
+      // router.push("/login?registered=true");
+      // Example: store user id or token if returned
+      const userId = response.data?.user?.id;
+
+      // redirect to onboarding
+      router.push(`/onboarding${userId ? `?user=${userId}` : ""}`);
     } catch (err: any) {
       // Prefer structured server validation details when available
       const serverData = err?.response?.data;
