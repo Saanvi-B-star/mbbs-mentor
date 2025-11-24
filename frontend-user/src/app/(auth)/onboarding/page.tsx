@@ -1,58 +1,208 @@
 "use client";
 
-import { useState } from 'react';
-import { GraduationCap, ChevronRight, ChevronLeft, Target, BookOpen, Stethoscope } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import {
+    GraduationCap,
+    ChevronRight,
+    ChevronLeft,
+    Target,
+    BookOpen,
+    Stethoscope,
+} from "lucide-react";
 
 export default function Onboarding() {
     const [step, setStep] = useState(1);
     const [error, setError] = useState("");
+    const [mounted, setMounted] = useState(false);
 
     const [formData, setFormData] = useState({
-        year: '',
-        university: '',
-        batch: '',
-        learningGoal: ''
+        year: "",
+        university: "",
+        learningGoal: [] as string[],
     });
+
+    const [goals] = useState([
+        {
+            id: "exam-prep",
+            title: "Exam Preparation",
+            desc: "Focus on university exams and competitive assessments",
+        },
+        {
+            id: "concept-mastery",
+            title: "Concept Mastery",
+            desc: "Deep understanding of medical concepts",
+        },
+        {
+            id: "clinical-skills",
+            title: "Clinical Skills",
+            desc: "Practical clinical application and case studies",
+        },
+    ]);
+    const uniRef = useRef<HTMLInputElement | null>(null);
+    const autocompleteRef = useRef<any>(null);
 
     const totalSteps = 3;
     const progress = (step / totalSteps) * 100;
 
+    // Fix hydration error - only calculate on client
+    const [currentYear, setCurrentYear] = useState(2024);
+
+    // Set mounted state to prevent hydration mismatch
+    useEffect(() => {
+        setMounted(true);
+        setCurrentYear(new Date().getFullYear());
+    }, []);
+
+    // Initialize Google Autocomplete
+    useEffect(() => {
+        if (!mounted) return;
+
+        const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!API_KEY) {
+            console.warn("Google Maps API key missing");
+            return;
+        }
+
+        if (typeof window !== "undefined" && (window as any).google?.maps) {
+            initAutocomplete();
+            return;
+        }
+
+        if (!document.querySelector(`script[data-gmaps]`)) {
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.setAttribute("data-gmaps", "true");
+            script.onload = () => initAutocomplete();
+            document.head.appendChild(script);
+        } else {
+            const check = setInterval(() => {
+                if ((window as any).google?.maps) {
+                    clearInterval(check);
+                    initAutocomplete();
+                }
+            }, 200);
+            return () => clearInterval(check);
+        }
+    }, [mounted]);
+
+    function initAutocomplete() {
+        if (!uniRef.current) return;
+        if (!(window as any).google?.maps) return;
+        if (autocompleteRef.current) return;
+
+        autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(
+            uniRef.current,
+            {
+                types: ["establishment"],
+                componentRestrictions: { country: "in" },
+            }
+        );
+
+        try {
+            autocompleteRef.current.setFields([
+                "name",
+                "formatted_address",
+                "place_id",
+                "geometry",
+                "types",
+            ]);
+        } catch (e) {
+            // ignore
+        }
+
+        autocompleteRef.current.addListener("place_changed", () => {
+            const place = autocompleteRef.current!.getPlace();
+            if (!place || !place.name) {
+                setFormData((s) => ({ ...s, university: uniRef.current?.value ?? "" }));
+                return;
+            }
+
+            setFormData((s) => ({ ...s, university: place.name }));
+        });
+    }
+
+    const toggleGoal = (goalId: string) => {
+        if (formData.learningGoal.includes(goalId)) {
+            setFormData({
+                ...formData,
+                learningGoal: formData.learningGoal.filter((id) => id !== goalId),
+            });
+        } else {
+            setFormData({
+                ...formData,
+                learningGoal: [...formData.learningGoal, goalId],
+            });
+        }
+    };
+
     const handleNext = () => {
         setError("");
-        if (step === 1 && (!formData.year || !formData.university || !formData.batch)) {
-            setError("Please fill in all fields to continue");
-            return;
+
+        if (step === 1) {
+            if (!formData.year || !formData.university) {
+                setError("Please fill in all fields to continue");
+                return;
+            }
         }
 
-        if (step === 2 && !formData.learningGoal) {
-            setError("Please select a learning goal to continue");
-            return;
+        if (step === 2) {
+            if (formData.learningGoal.length === 0) {
+                setError("Please select at least one learning goal to continue");
+                return;
+            }
         }
 
-        if (step < totalSteps) setStep(step + 1);
-        else handleComplete();
+        if (step < totalSteps) {
+            setStep(step + 1);
+        } else {
+            handleComplete();
+        }
     };
 
     const handleBack = () => {
         setError("");
-        setStep(step - 1);
+        if (step > 1) setStep(step - 1);
     };
 
     const handleComplete = () => {
-        window.location.href = "/dashboard";
+        try {
+            // Optional: Save onboarding data to localStorage
+            if (typeof window !== "undefined") {
+                localStorage.setItem('onboardingData', JSON.stringify(formData));
+            }
+
+            // Redirect to dashboard
+            window.location.href = "/dashboard";
+        } catch (err) {
+            console.error("Error during completion:", err);
+            setError("Failed to complete setup. Please try again.");
+        }
     };
 
-    const goalOptions = [
-        { id: 'exam-prep', emoji: '📝', title: 'Exam Preparation', desc: 'Focus on university exams, NEET PG preparation, and competitive assessments' },
-        { id: 'concept-mastery', emoji: '🧠', title: 'Concept Mastery', desc: 'Deep understanding of medical concepts and building strong foundations' },
-        { id: 'clinical-skills', emoji: '🩺', title: 'Clinical Skills', desc: 'Practical clinical application, case studies, and patient care skills' }
+    const nextSteps = [
+        {
+            num: "1",
+            title: "Personalized Dashboard",
+            desc: "AI curates topics based on your year and goals",
+        },
+        {
+            num: "2",
+            title: "Start Learning",
+            desc: "Access NMC-aligned content and practice questions",
+        },
+        {
+            num: "3",
+            title: "Track Progress",
+            desc: "Earn XP, unlock badges, and compete on leaderboards",
+        },
     ];
 
-    const nextSteps = [
-        { num: '1', title: 'Personalized Dashboard', desc: 'AI curates topics based on your year and goals' },
-        { num: '2', title: 'Start Learning', desc: 'Access NMC-aligned content and practice questions' },
-        { num: '3', title: 'Track Progress', desc: 'Earn XP, unlock badges, and compete on leaderboards' }
-    ];
+    // Prevent hydration mismatch by not rendering until mounted
+    if (!mounted) {
+        return null;
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4 py-12">
@@ -65,8 +215,12 @@ export default function Onboarding() {
                         </div>
                         <span className="text-2xl font-bold text-gray-900">MBBS Mentor</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Let's personalize your experience</h1>
-                    <p className="text-gray-600 mt-2">Step {step} of {totalSteps}</p>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Let's personalize your experience
+                    </h1>
+                    <p className="text-gray-600 mt-2">
+                        Step {step} of {totalSteps}
+                    </p>
                 </div>
 
                 {/* Progress Bar */}
@@ -85,13 +239,17 @@ export default function Onboarding() {
                         </div>
                     )}
 
-                    {/* Step 1: Academic Details */}
+                    {/* Step 1 */}
                     {step === 1 && (
                         <div className="space-y-6 animate-in fade-in duration-300">
                             <div className="text-center mb-8">
                                 <BookOpen className="h-12 w-12 mx-auto text-blue-600 mb-4" />
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Tell us about your studies</h2>
-                                <p className="text-gray-600 text-sm">We'll customize content based on your year and curriculum</p>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Tell us about your studies
+                                </h2>
+                                <p className="text-gray-600 text-sm">
+                                    We'll customize content based on your year and curriculum
+                                </p>
                             </div>
 
                             <div className="space-y-6">
@@ -104,13 +262,18 @@ export default function Onboarding() {
                                         {[1, 2, 3, 4].map((year) => (
                                             <button
                                                 key={year}
-                                                onClick={() => setFormData({ ...formData, year: year.toString() })}
+                                                onClick={() =>
+                                                    setFormData({ ...formData, year: year.toString() })
+                                                }
                                                 className={`py-3 px-4 rounded-lg font-medium transition border-2 ${formData.year === year.toString()
-                                                    ? 'border-blue-600 bg-blue-50 text-blue-600'
-                                                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                                    ? "border-blue-600 bg-blue-50 text-blue-600"
+                                                    : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
                                                     }`}
                                             >
-                                                {year === 4 ? `${year}th Year` : `${year}${year === 1 ? 'st' : year === 2 ? 'nd' : 'rd'} Year`}
+                                                {year === 4
+                                                    ? `${year}th Year`
+                                                    : `${year}${year === 1 ? "st" : year === 2 ? "nd" : "rd"
+                                                    } Year`}
                                             </button>
                                         ))}
                                     </div>
@@ -118,77 +281,85 @@ export default function Onboarding() {
 
                                 {/* University */}
                                 <div>
-                                    <label htmlFor="university" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label
+                                        htmlFor="university"
+                                        className="block text-sm font-medium text-gray-700 mb-2"
+                                    >
                                         Medical College/University
                                     </label>
                                     <input
                                         id="university"
+                                        ref={uniRef}
                                         type="text"
                                         placeholder="e.g., AIIMS Delhi, JIPMER, etc."
                                         value={formData.university}
-                                        onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, university: e.target.value })
+                                        }
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                                     />
-                                </div>
-
-                                {/* Batch */}
-                                <div>
-                                    <label htmlFor="batch" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Batch Year
-                                    </label>
-                                    <input
-                                        id="batch"
-                                        type="number"
-                                        placeholder="e.g., 2023"
-                                        min="2020"
-                                        max="2030"
-                                        value={formData.batch}
-                                        onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Start typing to see suggestions
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Step 2: Learning Goal */}
+                    {/* Step 2 */}
                     {step === 2 && (
                         <div className="space-y-6 animate-in fade-in duration-300">
                             <div className="text-center mb-8">
                                 <Target className="h-12 w-12 mx-auto text-blue-600 mb-4" />
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">What's your primary goal?</h2>
-                                <p className="text-gray-600 text-sm">We'll tailor your learning path accordingly</p>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Select your learning goals
+                                </h2>
+                                <p className="text-gray-600 text-sm">Pick one or more</p>
                             </div>
 
                             <div className="space-y-3">
-                                {goalOptions.map((goal) => (
-                                    <button
-                                        key={goal.id}
-                                        onClick={() => setFormData({ ...formData, learningGoal: goal.id })}
-                                        className={`w-full text-left p-5 rounded-lg border-2 transition ${formData.learningGoal === goal.id
-                                            ? 'border-blue-600 bg-blue-50'
-                                            : 'border-gray-300 bg-white hover:border-gray-400'
-                                            }`}
-                                    >
-                                        <p className="font-semibold text-gray-900 mb-1">{goal.emoji} {goal.title}</p>
-                                        <p className="text-sm text-gray-600">{goal.desc}</p>
-                                    </button>
-                                ))}
+                                {goals.length > 0 ? (
+                                    goals.map((goal) => (
+                                        <button
+                                            key={goal.id}
+                                            onClick={() => toggleGoal(goal.id)}
+                                            className={`w-full text-left p-5 rounded-lg border-2 transition ${formData.learningGoal.includes(goal.id)
+                                                ? "border-blue-600 bg-blue-50"
+                                                : "border-gray-300 bg-white hover:border-gray-400"
+                                                }`}
+                                        >
+                                            <p className="font-semibold text-gray-900 mb-1">
+                                                {goal.title}
+                                            </p>
+                                            <p className="text-sm text-gray-600">{goal.desc}</p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500 text-center text-sm">
+                                        Loading goals...
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Step 3: Final Setup */}
+                    {/* Step 3 */}
                     {step === 3 && (
                         <div className="space-y-6 animate-in fade-in duration-300">
                             <div className="text-center mb-8">
                                 <Stethoscope className="h-12 w-12 mx-auto text-blue-600 mb-4" />
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">You're all set! 🎉</h2>
-                                <p className="text-gray-600 text-sm">Your AI-powered dashboard is being prepared</p>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                    You're all set! 🎉
+                                </h2>
+                                <p className="text-gray-600 text-sm">
+                                    Your AI-powered dashboard is being prepared
+                                </p>
                             </div>
 
                             <div className="rounded-lg bg-blue-50 border border-blue-200 p-6 space-y-4">
-                                <h3 className="font-semibold text-gray-900 text-lg">What happens next:</h3>
+                                <h3 className="font-semibold text-gray-900 text-lg">
+                                    What happens next:
+                                </h3>
                                 <div className="space-y-3">
                                     {nextSteps.map((item) => (
                                         <div key={item.num} className="flex items-start gap-3">
@@ -196,7 +367,9 @@ export default function Onboarding() {
                                                 {item.num}
                                             </div>
                                             <div>
-                                                <p className="font-medium text-gray-900">{item.title}</p>
+                                                <p className="font-medium text-gray-900">
+                                                    {item.title}
+                                                </p>
                                                 <p className="text-sm text-gray-600">{item.desc}</p>
                                             </div>
                                         </div>
@@ -210,7 +383,8 @@ export default function Onboarding() {
                                     <div>
                                         <p className="font-medium text-gray-900 mb-1">Pro Tip</p>
                                         <p className="text-sm text-gray-600">
-                                            Study for just 5 minutes daily to maintain your streak and unlock special rewards!
+                                            Study for just 5 minutes daily to maintain your streak
+                                            and unlock special rewards!
                                         </p>
                                     </div>
                                 </div>
@@ -233,7 +407,7 @@ export default function Onboarding() {
                             onClick={handleNext}
                             className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
                         >
-                            {step === totalSteps ? 'Complete Setup' : 'Continue'}
+                            {step === totalSteps ? "Complete Setup" : "Continue"}
                             {step < totalSteps && <ChevronRight className="h-4 w-4" />}
                         </button>
                     </div>
