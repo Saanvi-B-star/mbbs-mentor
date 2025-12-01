@@ -99,6 +99,15 @@ enum NotificationPriority {
   HIGH
 }
 
+enum GoalType {
+  EXAM_PREPARATION
+  CONCEPT_MASTERY
+  CLINICAL_SKILLS
+  QUICK_REVISION
+  INTERNSHIP_READINESS
+  CASE_BASED_LEARNING
+}
+
 // ==================== USER MANAGEMENT ====================
 
 model User {
@@ -155,6 +164,7 @@ model User {
   createdMaterials      StudyMaterial[]     @relation("CreatedMaterials")
   createdQuestions      Question[]          @relation("CreatedQuestions")
   auditLogs             AuditLog[]
+  studentGoals          StudentGoals?
 
   @@index([email])
   @@index([subscriptionStatus])
@@ -196,6 +206,18 @@ model SubscriptionPlan {
   subscriptions   Subscription[]
 
   @@map("subscription_plans")
+}
+
+model StudentGoals {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals     GoalType[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+  @@map("student_goals")
 }
 
 model Subscription {

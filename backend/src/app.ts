@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+
 import { config, stream } from './config';
 import {
   errorMiddleware,
@@ -138,6 +139,7 @@ import { topicRoutes } from './modules/topic';
 import { questionRoutes } from './modules/question';
 import { testRoutes } from './modules/test';
 import { analyticsRoutes } from './modules/analytics';
+import { studentGoalsRoutes } from './modules/studentGoals'; // ADD THIS LINE
 
 // Mount routes
 app.use(`${API_VERSION.V1}/auth`, authRoutes);
@@ -151,6 +153,7 @@ app.use(`${API_VERSION.V1}/topics`, topicRoutes);
 app.use(`${API_VERSION.V1}/questions`, questionRoutes);
 app.use(`${API_VERSION.V1}/tests`, testRoutes);
 app.use(`${API_VERSION.V1}/analytics`, analyticsRoutes);
+app.use(`${API_VERSION.V1}/student-goals`, studentGoalsRoutes); // ADD THIS LINE
 
 // API info endpoint
 app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
@@ -172,6 +175,7 @@ app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
         questions: `${API_VERSION.V1}/questions`,
         tests: `${API_VERSION.V1}/tests`,
         analytics: `${API_VERSION.V1}/analytics`,
+        studentGoals: `${API_VERSION.V1}/student-goals`, // ADD THIS LINE
       },
       documentation: '/api/docs',
     },
