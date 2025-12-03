@@ -16,6 +16,7 @@ export interface UpdateUserDto {
   phoneNumber?: string;
   dateOfBirth?: Date;
   gender?: string;
+  batchYear?: number;
 }
 
 /**
