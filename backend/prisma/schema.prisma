@@ -6,7 +6,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Connection URLs and migrate config are moved to prisma.config.ts per Prisma v7.
+  // For direct database connections, pass an `adapter` to the PrismaClient constructor.
+  // For Accelerate, pass `accelerateUrl` to the PrismaClient constructor.
 }
 
 // ==================== ENUMS ====================
@@ -111,60 +113,60 @@ enum GoalType {
 // ==================== USER MANAGEMENT ====================
 
 model User {
-  id                    String              @id @default(cuid())
-  email                 String              @unique
-  name                  String
-  passwordHash          String?
-  authProvider          AuthProvider        @default(EMAIL)
-  providerId            String?
-  emailVerified         Boolean             @default(false)
-  profilePicture        String?
-  mbbsYear              Int?
-  college               String?
-  university            String?
-  phoneNumber           String?
-  dateOfBirth           DateTime?
-  gender                String?
+  id             String       @id @default(cuid())
+  email          String       @unique
+  name           String
+  passwordHash   String?
+  authProvider   AuthProvider @default(EMAIL)
+  providerId     String?
+  emailVerified  Boolean      @default(false)
+  profilePicture String?
+  mbbsYear       Int?
+  college        String?
+  university     String?
+  phoneNumber    String?
+  dateOfBirth    DateTime?
+  gender         String?
 
   // Token Management
-  currentTokenBalance   Int                 @default(100)
-  totalTokensEarned     Int                 @default(100)
-  totalTokensSpent      Int                 @default(0)
+  currentTokenBalance Int @default(100)
+  totalTokensEarned   Int @default(100)
+  totalTokensSpent    Int @default(0)
 
   // Subscription
   subscriptionId        String?
-  subscriptionStatus    SubscriptionStatus  @default(INACTIVE)
+  subscriptionStatus    SubscriptionStatus @default(INACTIVE)
   subscriptionStartDate DateTime?
   subscriptionEndDate   DateTime?
 
   // Account Status
-  lastLogin             DateTime?
-  loginCount            Int                 @default(0)
-  isActive              Boolean             @default(true)
-  isBanned              Boolean             @default(false)
-  banReason             String?
-  role                  UserRole            @default(STUDENT)
+  lastLogin  DateTime?
+  loginCount Int       @default(0)
+  isActive   Boolean   @default(true)
+  isBanned   Boolean   @default(false)
+  banReason  String?
+  role       UserRole  @default(STUDENT)
 
   // Timestamps
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  deletedAt             DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  subscriptions         Subscription[]
-  tokenTransactions     TokenTransaction[]
-  testAttempts          TestAttempt[]
-  bookmarks             Bookmark[]
-  aiConversations       AIConversation[]
-  studySessions         StudySession[]
-  userNotes             UserNote[]
-  notifications         Notification[]
-  paymentTransactions   PaymentTransaction[]
-  adminUser             AdminUser?
-  createdMaterials      StudyMaterial[]     @relation("CreatedMaterials")
-  createdQuestions      Question[]          @relation("CreatedQuestions")
-  auditLogs             AuditLog[]
-  studentGoals          StudentGoals?
+  subscriptions       Subscription[]
+  tokenTransactions   TokenTransaction[]
+  testAttempts        TestAttempt[]
+  bookmarks           Bookmark[]
+  aiConversations     AIConversation[]
+  studySessions       StudySession[]
+  userNotes           UserNote[]
+  notifications       Notification[]
+  paymentTransactions PaymentTransaction[]
+  adminUser           AdminUser?
+  createdMaterials    StudyMaterial[]      @relation("CreatedMaterials")
+  createdQuestions    Question[]           @relation("CreatedQuestions")
+  auditLogs           AuditLog[]
+  studentGoals        StudentGoals?
 
   @@index([email])
   @@index([subscriptionStatus])
@@ -173,15 +175,15 @@ model User {
 }
 
 model AdminUser {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   role        String
   permissions Json?
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   lastActive  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("admin_users")
 }
@@ -189,21 +191,21 @@ model AdminUser {
 // ==================== SUBSCRIPTION & BILLING ====================
 
 model SubscriptionPlan {
-  id              String         @id @default(cuid())
-  name            String         @unique
+  id              String   @id @default(cuid())
+  name            String   @unique
   displayName     String
   description     String?
-  price           Decimal        @db.Decimal(10, 2)
-  currency        String         @default("INR")
+  price           Decimal  @db.Decimal(10, 2)
+  currency        String   @default("INR")
   tokenAllocation Int
   billingCycle    String
   features        Json
-  isActive        Boolean        @default(true)
+  isActive        Boolean  @default(true)
   sortOrder       Int?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  subscriptions   Subscription[]
+  subscriptions Subscription[]
 
   @@map("subscription_plans")
 }
@@ -221,23 +223,23 @@ model StudentGoals {
 }
 
 model Subscription {
-  id                String             @id @default(cuid())
-  userId            String
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId            String
-  plan              SubscriptionPlan   @relation(fields: [planId], references: [id])
-  status            SubscriptionStatus @default(ACTIVE)
-  startDate         DateTime
-  endDate           DateTime
-  autoRenew         Boolean            @default(true)
-  paymentMethod     String?
-  razorpaySubscriptionId String?        @unique
-  lastPaymentDate   DateTime?
-  nextBillingDate   DateTime?
-  cancellationDate  DateTime?
-  cancellationReason String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                     String             @id @default(cuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                 String
+  plan                   SubscriptionPlan   @relation(fields: [planId], references: [id])
+  status                 SubscriptionStatus @default(ACTIVE)
+  startDate              DateTime
+  endDate                DateTime
+  autoRenew              Boolean            @default(true)
+  paymentMethod          String?
+  razorpaySubscriptionId String?            @unique
+  lastPaymentDate        DateTime?
+  nextBillingDate        DateTime?
+  cancellationDate       DateTime?
+  cancellationReason     String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   paymentTransactions PaymentTransaction[]
 
@@ -248,24 +250,24 @@ model Subscription {
 }
 
 model PaymentTransaction {
-  id                   String        @id @default(cuid())
-  userId               String
-  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subscriptionId       String?
-  subscription         Subscription? @relation(fields: [subscriptionId], references: [id])
-  amount               Decimal       @db.Decimal(10, 2)
-  currency             String        @default("INR")
-  paymentMethod        String?
-  paymentGateway       String        @default("razorpay")
-  razorpayPaymentId    String?       @unique
-  razorpayOrderId      String?
-  razorpaySignature    String?
-  status               PaymentStatus @default(PENDING)
-  description          String?
-  invoiceUrl           String?
-  metadata             Json?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  paymentMethod     String?
+  paymentGateway    String        @default("razorpay")
+  razorpayPaymentId String?       @unique
+  razorpayOrderId   String?
+  razorpaySignature String?
+  status            PaymentStatus @default(PENDING)
+  description       String?
+  invoiceUrl        String?
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -308,32 +310,32 @@ model Subject {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  topics      Topic[]
+  topics Topic[]
 
   @@index([mbbsYear])
   @@map("subjects")
 }
 
 model Topic {
-  id                  String          @id @default(cuid())
-  subjectId           String
-  subject             Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  parentTopicId       String?
-  parentTopic         Topic?          @relation("TopicHierarchy", fields: [parentTopicId], references: [id])
-  childTopics         Topic[]         @relation("TopicHierarchy")
-  name                String
-  description         String?
-  difficultyLevel     DifficultyLevel?
-  estimatedStudyTime  Int?
-  sortOrder           Int?
-  isActive            Boolean         @default(true)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                 String           @id @default(cuid())
+  subjectId          String
+  subject            Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  parentTopicId      String?
+  parentTopic        Topic?           @relation("TopicHierarchy", fields: [parentTopicId], references: [id])
+  childTopics        Topic[]          @relation("TopicHierarchy")
+  name               String
+  description        String?
+  difficultyLevel    DifficultyLevel?
+  estimatedStudyTime Int?
+  sortOrder          Int?
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
-  studyMaterials      StudyMaterial[]
-  questions           Question[]
-  bookmarks           Bookmark[]
-  studySessions       StudySession[]
+  studyMaterials StudyMaterial[]
+  questions      Question[]
+  bookmarks      Bookmark[]
+  studySessions  StudySession[]
 
   @@index([subjectId])
   @@index([parentTopicId])
@@ -361,7 +363,7 @@ model StudyMaterial {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  bookmarks    Bookmark[]
+  bookmarks Bookmark[]
 
   @@index([topicId])
   @@index([materialType])
@@ -371,37 +373,37 @@ model StudyMaterial {
 // ==================== USER UPLOADED NOTES ====================
 
 model UserNote {
-  id                String         @id @default(cuid())
-  userId            String
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title             String
-  originalFileName  String
-  fileUrl           String
-  fileType          String
-  fileSize          Int
+  id               String @id @default(cuid())
+  userId           String
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  originalFileName String
+  fileUrl          String
+  fileType         String
+  fileSize         Int
 
   // Processing
-  processingStatus  NoteProcStatus @default(PENDING)
-  extractedText     String?        @db.Text
-  formattedNotes    String?        @db.Text
-  summary           String?        @db.Text
+  processingStatus NoteProcStatus @default(PENDING)
+  extractedText    String?        @db.Text
+  formattedNotes   String?        @db.Text
+  summary          String?        @db.Text
 
   // Metadata
-  pageCount         Int?
-  wordCount         Int?
-  tags              String[]
+  pageCount Int?
+  wordCount Int?
+  tags      String[]
 
   // AI Processing
-  aiProcessingCost  Decimal?       @db.Decimal(10, 6)
-  processingTime    Int?
-  errorMessage      String?
+  aiProcessingCost Decimal? @db.Decimal(10, 6)
+  processingTime   Int?
+  errorMessage     String?
 
   // Settings
-  isPublic          Boolean        @default(false)
-  allowDownload     Boolean        @default(true)
+  isPublic      Boolean @default(false)
+  allowDownload Boolean @default(true)
 
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([processingStatus])
@@ -412,30 +414,30 @@ model UserNote {
 // ==================== QUESTIONS & TESTS ====================
 
 model Question {
-  id              String          @id @default(cuid())
-  topicId         String?
-  topic           Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  questionType    QuestionType
-  questionText    String          @db.Text
+  id               String          @id @default(cuid())
+  topicId          String?
+  topic            Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  questionType     QuestionType
+  questionText     String          @db.Text
   questionImageUrl String?
-  explanation     String?         @db.Text
-  difficultyLevel DifficultyLevel @default(MEDIUM)
-  tags            String[]
-  source          String?
-  usageCount      Int             @default(0)
-  correctAttempts Int             @default(0)
-  totalAttempts   Int             @default(0)
-  isActive        Boolean         @default(true)
-  isApproved      Boolean         @default(false)
-  createdById     String?
-  createdBy       User?           @relation("CreatedQuestions", fields: [createdById], references: [id])
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  explanation      String?         @db.Text
+  difficultyLevel  DifficultyLevel @default(MEDIUM)
+  tags             String[]
+  source           String?
+  usageCount       Int             @default(0)
+  correctAttempts  Int             @default(0)
+  totalAttempts    Int             @default(0)
+  isActive         Boolean         @default(true)
+  isApproved       Boolean         @default(false)
+  createdById      String?
+  createdBy        User?           @relation("CreatedQuestions", fields: [createdById], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  options         QuestionOption[]
-  testQuestions   TestQuestion[]
-  testAnswers     TestAnswer[]
-  bookmarks       Bookmark[]
+  options       QuestionOption[]
+  testQuestions TestQuestion[]
+  testAnswers   TestAnswer[]
+  bookmarks     Bookmark[]
 
   @@index([topicId])
   @@index([questionType])
@@ -444,37 +446,37 @@ model Question {
 }
 
 model QuestionOption {
-  id              String   @id @default(cuid())
-  questionId      String
-  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  optionText      String   @db.Text
-  optionImageUrl  String?
-  isCorrect       Boolean  @default(false)
-  explanation     String?  @db.Text
-  sortOrder       Int
+  id             String   @id @default(cuid())
+  questionId     String
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionText     String   @db.Text
+  optionImageUrl String?
+  isCorrect      Boolean  @default(false)
+  explanation    String?  @db.Text
+  sortOrder      Int
 
-  testAnswers     TestAnswer[]
+  testAnswers TestAnswer[]
 
   @@index([questionId])
   @@map("question_options")
 }
 
 model Test {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   userId          String
   title           String?
-  testType        TestType        @default(PRACTICE)
+  testType        TestType         @default(PRACTICE)
   subjectIds      String[]
   topicIds        String[]
   totalQuestions  Int
   duration        Int?
   difficultyLevel DifficultyLevel?
-  status          TestStatus      @default(PUBLISHED)
+  status          TestStatus       @default(PUBLISHED)
   tokenCost       Int?
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime         @default(now())
 
-  testQuestions   TestQuestion[]
-  testAttempts    TestAttempt[]
+  testQuestions TestQuestion[]
+  testAttempts  TestAttempt[]
 
   @@index([userId])
   @@index([testType])
@@ -541,30 +543,30 @@ model TestAnswer {
 // ==================== AI & ASSISTANT ====================
 
 model AIConversation {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  messages  AIMessage[]
+  messages AIMessage[]
 
   @@index([userId])
   @@map("ai_conversations")
 }
 
 model AIMessage {
-  id              String         @id @default(cuid())
-  conversationId  String
-  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  userId          String
-  role            String
-  content         String         @db.Text
-  tokensUsed      Int?
-  model           String?
-  aiCost          Decimal?       @db.Decimal(10, 6)
-  createdAt       DateTime       @default(now())
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  role           String
+  content        String         @db.Text
+  tokensUsed     Int?
+  model          String?
+  aiCost         Decimal?       @db.Decimal(10, 6)
+  createdAt      DateTime       @default(now())
 
   @@index([conversationId])
   @@index([userId])
@@ -574,18 +576,18 @@ model AIMessage {
 // ==================== BOOKMARKS & STUDY SESSIONS ====================
 
 model Bookmark {
-  id               String         @id @default(cuid())
+  id               String   @id @default(cuid())
   userId           String
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookmarkableType String
   bookmarkableId   String
-  notes            String?        @db.Text
+  notes            String?  @db.Text
   tags             String[]
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime @default(now())
 
-  studyMaterial    StudyMaterial? @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_studyMaterial_fkey")
-  question         Question?      @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_question_fkey")
-  topic            Topic?         @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_topic_fkey")
+  studyMaterial StudyMaterial? @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_studyMaterial_fkey")
+  question      Question?      @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_question_fkey")
+  topic         Topic?         @relation(fields: [bookmarkableId], references: [id], onDelete: Cascade, map: "bookmarks_topic_fkey")
 
   @@unique([userId, bookmarkableType, bookmarkableId])
   @@index([userId])
@@ -654,18 +656,18 @@ model AuditLog {
 }
 
 model APILog {
-  id            String   @id @default(cuid())
-  method        String
-  path          String
-  statusCode    Int
-  requestBody   Json?
-  responseBody  Json?
-  userId        String?
-  ipAddress     String?
-  userAgent     String?  @db.Text
-  duration      Int?
-  errorMessage  String?  @db.Text
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  method       String
+  path         String
+  statusCode   Int
+  requestBody  Json?
+  responseBody Json?
+  userId       String?
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  duration     Int?
+  errorMessage String?  @db.Text
+  createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([path])

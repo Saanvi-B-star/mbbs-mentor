@@ -21,23 +21,65 @@ export default function Onboarding() {
         learningGoal: [] as string[],
     });
 
-    const [goals] = useState([
-        {
-            id: "exam-prep",
-            title: "Exam Preparation",
-            desc: "Focus on university exams and competitive assessments",
-        },
-        {
-            id: "concept-mastery",
-            title: "Concept Mastery",
-            desc: "Deep understanding of medical concepts",
-        },
-        {
-            id: "clinical-skills",
-            title: "Clinical Skills",
-            desc: "Practical clinical application and case studies",
-        },
-    ]);
+    // const [goals] = useState([
+    //     {
+    //         id: "exam-prep",
+    //         title: "Exam Preparation",
+    //         desc: "Focus on university exams and competitive assessments",
+    //     },
+    //     {
+    //         id: "concept-mastery",
+    //         title: "Concept Mastery",
+    //         desc: "Deep understanding of medical concepts",
+    //     },
+    //     {
+    //         id: "clinical-skills",
+    //         title: "Clinical Skills",
+    //         desc: "Practical clinical application and case studies",
+    //     },
+    // ]);
+    const [goals, setGoals] = useState<any[]>([]);
+    const [loadingGoals, setLoadingGoals] = useState(true);
+
+    useEffect(() => {
+        async function fetchGoals() {
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                if (!apiUrl) {
+                    console.warn("NEXT_PUBLIC_API_URL is not set");
+                    setLoadingGoals(false);
+                    return;
+                }
+
+                const res = await fetch(`${apiUrl}/student-goals/available`, {
+                    method: "GET",
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error(`Failed to fetch goals: ${res.status} ${res.statusText}`, errorText);
+                    setLoadingGoals(false);
+                    return;
+                }
+
+                const data = await res.json();
+                console.log("Goals fetched:", data);
+
+                // FIX HERE:
+                setGoals(data.data || []);
+            } catch (err: unknown) {
+                console.error("Error fetching goals:", err instanceof Error ? err.message : String(err));
+            } finally {
+                setLoadingGoals(false);
+            }
+        }
+
+        fetchGoals();
+    }, []);
+
+
+
+
     const uniRef = useRef<HTMLInputElement | null>(null);
     const autocompleteRef = useRef<any>(null);
 
@@ -127,7 +169,7 @@ export default function Onboarding() {
         if (formData.learningGoal.includes(goalId)) {
             setFormData({
                 ...formData,
-                learningGoal: formData.learningGoal.filter((id) => id !== goalId),
+                learningGoal: formData.learningGoal.filter((goalKey) => goalKey !== goalId),
             });
         } else {
             setFormData({
@@ -166,20 +208,44 @@ export default function Onboarding() {
         if (step > 1) setStep(step - 1);
     };
 
-    const handleComplete = () => {
+    // const handleComplete = () => {
+    //     try {
+    //         // Optional: Save onboarding data to localStorage
+    //         if (typeof window !== "undefined") {
+    //             localStorage.setItem('onboardingData', JSON.stringify(formData));
+    //         }
+
+    //         // Redirect to dashboard
+    //         window.location.href = "/dashboard";
+    //     } catch (err) {
+    //         console.error("Error during completion:", err);
+    //         setError("Failed to complete setup. Please try again.");
+    //     }
+    // };
+
+    const handleComplete = async () => {
         try {
-            // Optional: Save onboarding data to localStorage
-            if (typeof window !== "undefined") {
-                localStorage.setItem('onboardingData', JSON.stringify(formData));
-            }
+            // Save onboarding data locally
+            localStorage.setItem('onboardingData', JSON.stringify(formData));
+
+            // Save goals in backend
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student-goals`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`, // or cookies
+                },
+                body: JSON.stringify({ goals: formData.learningGoal }),
+            });
 
             // Redirect to dashboard
             window.location.href = "/dashboard";
         } catch (err) {
-            console.error("Error during completion:", err);
+            console.error("Error saving goals", err);
             setError("Failed to complete setup. Please try again.");
         }
     };
+
 
     const nextSteps = [
         {
@@ -318,30 +384,38 @@ export default function Onboarding() {
                             </div>
 
                             <div className="space-y-3">
-                                {goals.length > 0 ? (
+                                {loadingGoals ? (
+                                    <p className="text-gray-500 text-center text-sm">Loading goals...</p>
+                                ) : goals.length > 0 ? (
                                     goals.map((goal) => (
                                         <button
-                                            key={goal.id}
-                                            onClick={() => toggleGoal(goal.id)}
-                                            className={`w-full text-left p-5 rounded-lg border-2 transition ${formData.learningGoal.includes(goal.id)
-                                                ? "border-blue-600 bg-blue-50"
-                                                : "border-gray-300 bg-white hover:border-gray-400"
+                                            key={goal.type}   // UNIQUE KEY
+                                            onClick={() => toggleGoal(goal.type)}  // SELECT GOAL BY TYPE
+                                            className={`w-full text-left p-5 rounded-lg border-2 transition ${formData.learningGoal.includes(goal.type)
+                                                    ? "border-blue-600 bg-blue-50"
+                                                    : "border-gray-300 bg-white hover:border-gray-400"
                                                 }`}
                                         >
                                             <p className="font-semibold text-gray-900 mb-1">
-                                                {goal.title}
+                                                {goal.label}  {/* Correct name from backend */}
                                             </p>
-                                            <p className="text-sm text-gray-600">{goal.desc}</p>
+
+                                            {goal.description && (
+                                                <p className="text-sm text-gray-600">
+                                                    {goal.description}
+                                                </p>
+                                            )}
                                         </button>
                                     ))
                                 ) : (
                                     <p className="text-gray-500 text-center text-sm">
-                                        Loading goals...
+                                        No goals found.
                                     </p>
                                 )}
                             </div>
                         </div>
                     )}
+
 
                     {/* Step 3 */}
                     {step === 3 && (
