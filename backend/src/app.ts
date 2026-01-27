@@ -5,6 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 
 import { config, stream } from './config';
+import { passport } from './config/passport'; // Import passport configuration
 import {
   errorMiddleware,
   globalRateLimiter,
@@ -43,6 +44,12 @@ app.use(
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ==================== PASSPORT INITIALIZATION ====================
+
+// Initialize Passport for OAuth authentication
+// Note: We use JWT tokens (stateless), NOT sessions
+app.use(passport.initialize());
 
 // ==================== STATIC FILES ====================
 

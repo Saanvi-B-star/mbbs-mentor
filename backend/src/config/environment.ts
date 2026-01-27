@@ -83,6 +83,9 @@ export const config = {
   isDevelopment: env.NODE_ENV === 'development',
   isProduction: env.NODE_ENV === 'production',
   isTest: env.NODE_ENV === 'test',
+  serverUrl: env.NODE_ENV === 'production' 
+    ? 'https://your-production-domain.com' 
+    : `http://localhost:${env.PORT}`,
 
   // Database
   database: {
@@ -154,6 +157,10 @@ export const config = {
       clientSecret: env.APPLE_CLIENT_SECRET,
     },
   },
+
+  // For backward compatibility - direct access to Google OAuth credentials
+  googleClientId: env.GOOGLE_CLIENT_ID,
+  googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 } as const;
 
 export type Config = typeof config;
