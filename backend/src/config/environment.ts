@@ -41,6 +41,13 @@ const envSchema = z.object({
   OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
   OPENROUTER_DEFAULT_MODEL: z.string().default('openai/gpt-3.5-turbo'),
 
+  // OpenAI (for embeddings)
+  OPENAI_API_KEY: z.string(),
+
+  // Pinecone (vector database)
+  PINECONE_API_KEY: z.string(),
+  PINECONE_INDEX_NAME: z.string().default('mbbs-index'),
+
   // Razorpay (Optional - required for payments)
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
@@ -136,6 +143,17 @@ export const config = {
     apiKey: env.OPENROUTER_API_KEY,
     baseUrl: env.OPENROUTER_BASE_URL,
     defaultModel: env.OPENROUTER_DEFAULT_MODEL,
+  },
+
+  // OpenAI (for embeddings)
+  openai: {
+    apiKey: env.OPENAI_API_KEY,
+  },
+
+  // Pinecone (vector database)
+  pinecone: {
+    apiKey: env.PINECONE_API_KEY,
+    indexName: env.PINECONE_INDEX_NAME,
   },
 
   // Razorpay (Optional)

@@ -139,7 +139,6 @@ import { authRoutes } from './modules/auth';
 import { userRoutes } from './modules/user';
 import { tokenRoutes } from './modules/token';
 import { paymentRoutes } from './modules/payment';
-import { aiRoutes } from './modules/ai';
 import { notesRoutes } from './modules/notes';
 import { subjectRoutes } from './modules/subject';
 import { topicRoutes } from './modules/topic';
@@ -147,13 +146,13 @@ import { questionRoutes } from './modules/question';
 import { testRoutes } from './modules/test';
 import { analyticsRoutes } from './modules/analytics';
 import { studentGoalsRoutes } from './modules/studentGoals'; // ADD THIS LINE
+import { llmRoutes } from './modules/llm';
 
 // Mount routes
 app.use(`${API_VERSION.V1}/auth`, authRoutes);
 app.use(`${API_VERSION.V1}/users`, userRoutes);
 app.use(`${API_VERSION.V1}/tokens`, tokenRoutes);
 app.use(`${API_VERSION.V1}/payments`, paymentRoutes);
-app.use(`${API_VERSION.V1}/ai`, aiRoutes);
 app.use(`${API_VERSION.V1}/notes`, notesRoutes);
 app.use(`${API_VERSION.V1}/subjects`, subjectRoutes);
 app.use(`${API_VERSION.V1}/topics`, topicRoutes);
@@ -161,6 +160,7 @@ app.use(`${API_VERSION.V1}/questions`, questionRoutes);
 app.use(`${API_VERSION.V1}/tests`, testRoutes);
 app.use(`${API_VERSION.V1}/analytics`, analyticsRoutes);
 app.use(`${API_VERSION.V1}/student-goals`, studentGoalsRoutes); // ADD THIS LINE
+app.use(`${API_VERSION.V1}/llm`, llmRoutes);
 
 // API info endpoint
 app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
@@ -183,6 +183,7 @@ app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
         tests: `${API_VERSION.V1}/tests`,
         analytics: `${API_VERSION.V1}/analytics`,
         studentGoals: `${API_VERSION.V1}/student-goals`, // ADD THIS LINE
+        llm: `${API_VERSION.V1}/llm`,
       },
       documentation: '/api/docs',
     },

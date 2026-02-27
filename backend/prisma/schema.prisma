@@ -718,3 +718,17 @@ model SystemSetting {
 
   @@map("system_settings")
 }
+
+// ==================== LLM CHAT HISTORY ====================
+
+model LlmChat {
+  id        String   @id @default(uuid())
+  userId    String?
+  question  String   @db.Text
+  response  String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("llm_chats")
+}
