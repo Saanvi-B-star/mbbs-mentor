@@ -1,8 +1,16 @@
 import { prisma } from '@/config';
 import { uploadToS3, countWords } from '@/shared/utils';
-import { NotFoundException, ForbiddenException } from '@/shared/exceptions';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@/shared/exceptions';
 import { NoteProcStatus } from '@prisma/client';
-import { NoteResponseDto, UpdateNoteDto, FlashcardDto } from './notes.types';
+import {
+  NoteResponseDto,
+  UpdateNoteDto,
+  FlashcardDto,
+  NoteSearchQueryDto,
+  NoteExtractByTagsDto,
+  NoteExtractByDateRangeDto,
+  NoteStatisticsDto
+} from './notes.types';
 import { queueNoteProcessing } from '@/config/queue.config';
 
 /**
@@ -187,6 +195,404 @@ export class NotesService {
   }
 
   /**
+   * Search notes by query (title or tags)
+   */
+  async searchNotes(
+    userId: string,
+    query: NoteSearchQueryDto
+  ): Promise<any> {
+    const { searchTerm, tags, status, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+
+    // Search by title
+    if (searchTerm && searchTerm.trim()) {
+      where.OR = [
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { summary: { contains: searchTerm, mode: 'insensitive' } },
+        { extractedText: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    // Filter by status
+    if (status) {
+      where.processingStatus = status;
+    }
+
+    // Filter by tags
+    if (tags && tags.length > 0) {
+      where.tags = { hasSome: tags };
+    }
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.userNote.count({ where }),
+    ]);
+
+    return {
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Extract notes by specific tags
+   */
+  async extractByTags(
+    userId: string,
+    query: NoteExtractByTagsDto
+  ): Promise<any> {
+    const { tags, page = 1, limit = 10 } = query;
+
+    if (!tags || tags.length === 0) {
+      throw new BadRequestException('At least one tag is required');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          tags: { hasSome: tags },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          tags: { hasSome: tags },
+        },
+      }),
+    ]);
+
+    return {
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Extract notes by date range
+   */
+  async extractByDateRange(
+    userId: string,
+    query: NoteExtractByDateRangeDto
+  ): Promise<any> {
+    const { startDate, endDate, page = 1, limit = 10 } = query;
+
+    if (!startDate || !endDate) {
+      throw new BadRequestException('Both startDate and endDate are required');
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start > end) {
+      throw new BadRequestException('startDate must be before endDate');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Extract notes by processing status
+   */
+  async extractByStatus(
+    userId: string,
+    status: NoteProcStatus,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<any> {
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          processingStatus: status,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          processingStatus: status,
+        },
+      }),
+    ]);
+
+    return {
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get only processed notes with extracted content
+   */
+  async getProcessedNotes(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<any> {
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          processingStatus: NoteProcStatus.COMPLETED,
+          extractedText: { not: null },
+        },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          originalFileName: true,
+          fileUrl: true,
+          extractedText: true,
+          formattedNotes: true,
+          summary: true,
+          pageCount: true,
+          wordCount: true,
+          tags: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          processingStatus: NoteProcStatus.COMPLETED,
+          extractedText: { not: null },
+        },
+      }),
+    ]);
+
+    return {
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get note statistics and metrics
+   */
+  async getNoteStatistics(userId: string): Promise<NoteStatisticsDto> {
+    const [
+      totalNotes,
+      completedNotes,
+      processingNotes,
+      failedNotes,
+      totalSize,
+      totalWords,
+      allTags,
+    ] = await Promise.all([
+      prisma.userNote.count({ where: { userId } }),
+      prisma.userNote.count({ where: { userId, processingStatus: NoteProcStatus.COMPLETED } }),
+      prisma.userNote.count({ where: { userId, processingStatus: NoteProcStatus.PROCESSING } }),
+      prisma.userNote.count({ where: { userId, processingStatus: NoteProcStatus.FAILED } }),
+      prisma.userNote.aggregate({
+        where: { userId },
+        _sum: { fileSize: true },
+      }),
+      prisma.userNote.aggregate({
+        where: { userId },
+        _sum: { wordCount: true },
+      }),
+      prisma.userNote.findMany({
+        where: { userId },
+        select: { tags: true },
+      }),
+    ]);
+
+    // Calculate unique tags
+    const tagsSet = new Set<string>();
+    allTags.forEach(note => {
+      note.tags?.forEach(tag => tagsSet.add(tag));
+    });
+
+    // Calculate average processing time
+    const completedNotesData = await prisma.userNote.findMany({
+      where: { userId, processingStatus: NoteProcStatus.COMPLETED },
+      select: { processingTime: true },
+    });
+
+    const avgProcessingTime = completedNotesData.length
+      ? completedNotesData.reduce((acc, note) => acc + (note.processingTime || 0), 0) / completedNotesData.length
+      : 0;
+
+    return {
+      totalNotes,
+      completedNotes,
+      processingNotes,
+      failedNotes,
+      pendingNotes: await prisma.userNote.count({ where: { userId, processingStatus: NoteProcStatus.PENDING } }),
+      totalStorageUsed: totalSize._sum.fileSize || 0,
+      totalWords: totalWords._sum.wordCount || 0,
+      uniqueTags: Array.from(tagsSet),
+      averageProcessingTime: Math.round(avgProcessingTime),
+    };
+  }
+
+  /**
+   * Export notes as JSON or CSV
+   */
+  async exportNotes(
+    userId: string,
+    format: 'json' | 'csv' = 'json',
+    filters?: {
+      status?: NoteProcStatus;
+      tags?: string[];
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<any> {
+    const where: any = { userId };
+
+    if (filters?.status) {
+      where.processingStatus = filters.status;
+    }
+
+    if (filters?.tags && filters.tags.length > 0) {
+      where.tags = { hasSome: filters.tags };
+    }
+
+    if (filters?.startDate && filters?.endDate) {
+      where.createdAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    }
+
+    const notes = await prisma.userNote.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (format === 'json') {
+      return {
+        exportedAt: new Date().toISOString(),
+        totalNotes: notes.length,
+        notes: notes.map(this.mapNoteToDto),
+      };
+    }
+
+    // CSV format
+    if (format === 'csv') {
+      const headers = [
+        'ID',
+        'Title',
+        'File Name',
+        'File Type',
+        'File Size',
+        'Processing Status',
+        'Word Count',
+        'Page Count',
+        'Tags',
+        'Is Public',
+        'Created At',
+        'Updated At',
+      ];
+
+      const rows = notes.map(note => [
+        note.id,
+        `"${note.title}"`,
+        `"${note.originalFileName}"`,
+        note.fileType,
+        note.fileSize,
+        note.processingStatus,
+        note.wordCount || '',
+        note.pageCount || '',
+        `"${(note.tags || []).join(', ')}"`,
+        note.isPublic ? 'Yes' : 'No',
+        note.createdAt.toISOString(),
+        note.updatedAt.toISOString(),
+      ]);
+
+      const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+      return { csv, filename: `notes-export-${Date.now()}.csv` };
+    }
+  }
+
+  /**
    * Map note entity to DTO
    */
   private mapNoteToDto(note: any): NoteResponseDto {
@@ -207,6 +613,216 @@ export class NotesService {
       isPublic: note.isPublic,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
+    };
+  }
+
+  /**
+   * Extract notes by topic
+   */
+  async extractByTopic(
+    userId: string,
+    topicId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<any> {
+    // Verify topic exists
+    const topic = await prisma.topic.findUnique({
+      where: { id: topicId },
+      include: { subject: true },
+    });
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          topicId,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          topicId,
+        },
+      }),
+    ]);
+
+    return {
+      topicId: topic.id,
+      topicName: topic.name,
+      subjectId: topic.subjectId,
+      subjectName: topic.subject.name,
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Extract notes by subject (all topics under subject)
+   */
+  async extractBySubject(
+    userId: string,
+    subjectId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<any> {
+    // Verify subject exists
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Get all topics under this subject
+    const topicIds = await prisma.topic.findMany({
+      where: { subjectId },
+      select: { id: true },
+    });
+
+    const topicIdsList = topicIds.map(t => t.id);
+
+    const [notes, total] = await Promise.all([
+      prisma.userNote.findMany({
+        where: {
+          userId,
+          topicId: { in: topicIdsList },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.userNote.count({
+        where: {
+          userId,
+          topicId: { in: topicIdsList },
+        },
+      }),
+    ]);
+
+    return {
+      subjectId: subject.id,
+      subjectName: subject.name,
+      data: notes.map(this.mapNoteToDto),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get notes organized by topics within a subject
+   */
+  async getNotesBySubjectTree(
+    userId: string,
+    subjectId: string
+  ): Promise<any> {
+    // Verify subject exists
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    // Get all topics under this subject
+    const topics = await prisma.topic.findMany({
+      where: { subjectId },
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        userNotes: {
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    const topicsWithNotes = topics.map(topic => ({
+      topicId: topic.id,
+      topicName: topic.name,
+      description: topic.description,
+      difficultyLevel: topic.difficultyLevel,
+      totalNotes: topic.userNotes.length,
+      notes: topic.userNotes.map(this.mapNoteToDto),
+    }));
+
+    const totalNotes = topicsWithNotes.reduce((sum, topic) => sum + topic.totalNotes, 0);
+
+    return {
+      subjectId: subject.id,
+      subjectName: subject.name,
+      totalTopics: topics.length,
+      totalNotes,
+      topics: topicsWithNotes,
+    };
+  }
+
+  /**
+   * Get notes organized by subject (nested structure)
+   */
+  async getNotesBySubjectsTree(userId: string): Promise<any> {
+    // Get all subjects
+    const subjects = await prisma.subject.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        topics: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            userNotes: {
+              where: { userId },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
+      },
+    });
+
+    const subjectsWithNotes = subjects.map(subject => ({
+      subjectId: subject.id,
+      subjectName: subject.name,
+      color: subject.color,
+      icon: subject.iconUrl,
+      totalNotes: subject.topics.reduce((sum, topic) => sum + topic.userNotes.length, 0),
+      topics: subject.topics.map(topic => ({
+        topicId: topic.id,
+        topicName: topic.name,
+        difficultyLevel: topic.difficultyLevel,
+        totalNotes: topic.userNotes.length,
+        notes: topic.userNotes.map(this.mapNoteToDto),
+      })),
+    }));
+
+    const totalNotes = subjectsWithNotes.reduce((sum, subject) => sum + subject.totalNotes, 0);
+
+    return {
+      totalSubjects: subjects.length,
+      totalNotes,
+      subjects: subjectsWithNotes,
     };
   }
 }

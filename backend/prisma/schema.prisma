@@ -6,6 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
   // Connection URLs and migrate config are moved to prisma.config.ts per Prisma v7.
   // For direct database connections, pass an `adapter` to the PrismaClient constructor.
   // For Accelerate, pass `accelerateUrl` to the PrismaClient constructor.
@@ -336,6 +337,7 @@ model Topic {
   questions      Question[]
   bookmarks      Bookmark[]
   studySessions  StudySession[]
+  userNotes      UserNote[]
 
   @@index([subjectId])
   @@index([parentTopicId])
@@ -373,9 +375,11 @@ model StudyMaterial {
 // ==================== USER UPLOADED NOTES ====================
 
 model UserNote {
-  id               String @id @default(cuid())
+  id               String  @id @default(cuid())
   userId           String
-  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId          String?
+  topic            Topic?  @relation(fields: [topicId], references: [id], onDelete: SetNull)
   title            String
   originalFileName String
   fileUrl          String
@@ -406,6 +410,7 @@ model UserNote {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([topicId])
   @@index([processingStatus])
   @@index([createdAt])
   @@map("user_notes")

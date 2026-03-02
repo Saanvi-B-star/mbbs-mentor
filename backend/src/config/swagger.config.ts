@@ -60,6 +60,11 @@ export const swaggerOptions: Options = {
         description: 'Upload and manage study notes with OCR processing',
       },
       {
+        name: 'Study Material',
+        description: 'Global study materials uploaded by admin (shared across users)',
+      },
+
+      {
         name: 'Subjects',
         description: 'Medical subjects and topics hierarchy',
       },
@@ -83,6 +88,7 @@ export const swaggerOptions: Options = {
         name: 'Health',
         description: 'API health check and status',
       },
+
     ],
     components: {
       securitySchemes: {
@@ -329,7 +335,56 @@ export const swaggerOptions: Options = {
             },
           },
         },
+        // Study Material Schema
+        StudyMaterial: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              example: '123e4567-e89b-12d3-a456-426614174000',
+            },
+            title: {
+              type: 'string',
+              example: 'Anatomy - Upper Limb',
+            },
+            description: {
+              type: 'string',
+              nullable: true,
+              example: 'Comprehensive notes for upper limb anatomy.',
+            },
+            fileUrl: {
+              type: 'string',
+              example: '/uploads/anatomy-upper-limb.pdf',
+            },
+            subjectId: {
+              type: 'string',
+              format: 'uuid',
+              example: 'subject-uuid-here',
+            },
+            topicId: {
+              type: 'string',
+              format: 'uuid',
+              nullable: true,
+              example: 'topic-uuid-here',
+            },
+            isPremium: {
+              type: 'boolean',
+              example: false,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
+
       },
+
       responses: {
         UnauthorizedError: {
           description: 'Authentication token is missing or invalid',

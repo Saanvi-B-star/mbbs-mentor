@@ -140,6 +140,8 @@ import { questionRoutes } from './modules/question';
 import { testRoutes } from './modules/test';
 import { analyticsRoutes } from './modules/analytics';
 import { studentGoalsRoutes } from './modules/studentGoals'; // ADD THIS LINE
+import { studyMaterialRoutes } from './modules/studyMaterial';
+
 
 // Mount routes
 app.use(`${API_VERSION.V1}/auth`, authRoutes);
@@ -154,6 +156,7 @@ app.use(`${API_VERSION.V1}/questions`, questionRoutes);
 app.use(`${API_VERSION.V1}/tests`, testRoutes);
 app.use(`${API_VERSION.V1}/analytics`, analyticsRoutes);
 app.use(`${API_VERSION.V1}/student-goals`, studentGoalsRoutes); // ADD THIS LINE
+app.use(`${API_VERSION.V1}/study-material`, studyMaterialRoutes);
 
 // API info endpoint
 app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
