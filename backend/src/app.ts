@@ -147,6 +147,7 @@ import { testRoutes } from './modules/test';
 import { analyticsRoutes } from './modules/analytics';
 import { studentGoalsRoutes } from './modules/studentGoals'; // ADD THIS LINE
 import { llmRoutes } from './modules/llm';
+import { ragRoutes } from './modules/rag';
 
 // Mount routes
 app.use(`${API_VERSION.V1}/auth`, authRoutes);
@@ -161,6 +162,7 @@ app.use(`${API_VERSION.V1}/tests`, testRoutes);
 app.use(`${API_VERSION.V1}/analytics`, analyticsRoutes);
 app.use(`${API_VERSION.V1}/student-goals`, studentGoalsRoutes); // ADD THIS LINE
 app.use(`${API_VERSION.V1}/llm`, llmRoutes);
+app.use(`${API_VERSION.V1}/rag`, ragRoutes);
 
 // API info endpoint
 app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
@@ -184,6 +186,7 @@ app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
         analytics: `${API_VERSION.V1}/analytics`,
         studentGoals: `${API_VERSION.V1}/student-goals`, // ADD THIS LINE
         llm: `${API_VERSION.V1}/llm`,
+        rag: `${API_VERSION.V1}/rag`,
       },
       documentation: '/api/docs',
     },

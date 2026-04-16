@@ -732,3 +732,22 @@ model LlmChat {
   @@index([createdAt])
   @@map("llm_chats")
 }
+
+// ==================== RAG INDEX ====================
+
+model RagIndex {
+  id        String   @id @default(cuid())
+  nodeId    String   @unique
+  nodeType  String   // "subject" | "topic" | "material" | "question"
+  title     String
+  summary   String   @db.Text
+  content   String   @db.Text
+  parentId  String?
+  metadata  Json?    // { subjectCode, mbbsYear, difficultyLevel, materialType, questionType }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([nodeType])
+  @@index([parentId])
+  @@map("rag_index")
+}
