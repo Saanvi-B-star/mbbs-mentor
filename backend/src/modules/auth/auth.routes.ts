@@ -3,6 +3,7 @@ import { authController } from './auth.controller';
 import { validate } from '@/middleware';
 import { authMiddleware } from '@/middleware';
 import { authRateLimiter } from '@/middleware';
+import { passport } from '@/config/passport';
 import {
   registerSchema,
   loginSchema,
@@ -357,5 +358,52 @@ router.post(
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.post('/logout', authMiddleware, authController.logout.bind(authController));
+
+// ==================== GOOGLE OAUTH ROUTES ====================
+
+/**
+ * @swagger
+ * /api/v1/auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags: [Auth]
+ *     description: Redirects user to Google for authentication
+ *     responses:
+ *       302:
+ *         description: Redirects to Google OAuth consent screen
+ */
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false, // We use JWT, not sessions
+  })
+);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     tags: [Auth]
+ *     description: Google redirects here after user authorizes. Creates/logs in user and redirects to frontend with JWT.
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *         description: Authorization code from Google
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend with JWT token or error
+ */
+router.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    session: false, // We use JWT, not sessions
+    failureRedirect: '/auth/error',
+  }),
+  authController.googleCallback.bind(authController)
+);
 
 export { router as authRoutes };

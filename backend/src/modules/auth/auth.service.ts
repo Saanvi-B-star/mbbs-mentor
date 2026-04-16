@@ -299,6 +299,112 @@ export class AuthService {
   }
 
   /**
+   * Google OAuth Login/Signup
+   * Handles user authentication via Google OAuth
+   * If user exists with same email -> log them in
+   * If user doesn't exist -> create new user with Google auth provider
+   */
+  async googleAuth(googleData: {
+    email: string;
+    name: string;
+    profilePicture?: string;
+    providerId: string;
+    authProvider: 'GOOGLE';
+  }): Promise<LoginResponse> {
+    // Check if user exists with this email
+    let user = await prisma.user.findUnique({
+      where: { email: googleData.email },
+    });
+
+    if (user) {
+      // User exists - log them in
+      // Check if account is active
+      if (!user.isActive) {
+        throw new UnauthorizedException(
+          'Account is inactive',
+          ERROR_CODES.AUTH_ACCOUNT_INACTIVE
+        );
+      }
+
+      // Check if account is banned
+      if (user.isBanned) {
+        throw new UnauthorizedException(
+          'Account has been banned',
+          ERROR_CODES.AUTH_ACCOUNT_BANNED
+        );
+      }
+
+      // Update user with Google info if not already set
+      if (user.authProvider !== AuthProvider.GOOGLE) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            authProvider: AuthProvider.GOOGLE,
+            providerId: googleData.providerId,
+            profilePicture: googleData.profilePicture || user.profilePicture,
+            emailVerified: true, // Google emails are verified
+          },
+        });
+      }
+
+      // Update last login
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          lastLogin: new Date(),
+          loginCount: { increment: 1 },
+        },
+      });
+    } else {
+      // User doesn't exist - create new user with Google auth
+      user = await prisma.user.create({
+        data: {
+          email: googleData.email,
+          name: googleData.name,
+          profilePicture: googleData.profilePicture,
+          authProvider: AuthProvider.GOOGLE,
+          providerId: googleData.providerId,
+          emailVerified: true, // Google emails are verified
+          passwordHash: null, // No password for OAuth users
+          currentTokenBalance: 100, // Initial bonus
+          totalTokensEarned: 100,
+          role: UserRole.STUDENT,
+        },
+      });
+
+      // Create initial token transaction for new user
+      await prisma.tokenTransaction.create({
+        data: {
+          userId: user.id,
+          transactionType: 'EARNED',
+          amount: 100,
+          balanceAfter: 100,
+          description: 'Welcome bonus (Google signup)',
+        },
+      });
+    }
+
+    // Generate JWT tokens
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: this.sanitizeUser(user),
+    };
+  }
+
+  /**
    * Sanitize user data (remove sensitive fields)
    */
   private sanitizeUser(user: any): UserPublicInfo {
