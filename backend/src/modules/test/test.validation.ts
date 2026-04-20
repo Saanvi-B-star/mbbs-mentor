@@ -8,37 +8,24 @@ import { TestType, DifficultyLevel, QuestionType } from '@prisma/client';
 
 // Generate test schema
 export const generateTestSchema = z.object({
-  body: z
-    .object({
-      title: z.string().optional(),
-      testType: z.nativeEnum(TestType, {
-        errorMap: () => ({ message: 'Invalid test type' }),
-      }),
-      subjectIds: z.array(z.string()).optional(),
-      topicIds: z.array(z.string()).optional(),
-      totalQuestions: z
-        .number()
-        .int()
-        .min(1, 'At least 1 question required')
-        .max(200, 'Maximum 200 questions allowed'),
-      duration: z.number().int().min(1).max(600).optional(), // Max 10 hours
-      difficultyLevel: z.nativeEnum(DifficultyLevel).optional(),
-      questionTypes: z.array(z.nativeEnum(QuestionType)).optional(),
-    })
-    .refine(
-      (data) => {
-        // At least one of subjectIds or topicIds must be provided
-        return (
-          (data.subjectIds && data.subjectIds.length > 0) ||
-          (data.topicIds && data.topicIds.length > 0)
-        );
-      },
-      {
-        message: 'Either subjectIds or topicIds must be provided',
-        path: ['topicIds'],
-      }
-    ),
+  body: z.object({
+    title: z.string().optional(),
+    testType: z.nativeEnum(TestType, {
+      errorMap: () => ({ message: 'Invalid test type' }),
+    }),
+    subjectIds: z.array(z.string()).optional(),
+    topicIds: z.array(z.string()).optional(),
+    totalQuestions: z
+      .number()
+      .int()
+      .min(1, 'At least 1 question required')
+      .max(200, 'Maximum 200 questions allowed'),
+    duration: z.number().int().min(1).max(600).optional(), // Max 10 hours
+    difficultyLevel: z.nativeEnum(DifficultyLevel).optional(),
+    questionTypes: z.array(z.nativeEnum(QuestionType)).optional(),
+  }),
 });
+
 
 // Get test by ID schema
 export const getTestByIdSchema = z.object({

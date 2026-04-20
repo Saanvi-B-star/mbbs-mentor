@@ -4,20 +4,6 @@ import { verifyAccessToken } from '@/shared/utils';
 import { prisma } from '@/config';
 import { UserRole } from '@prisma/client';
 
-/**
- * Extend Express Request to include user
- */
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: UserRole;
-      };
-    }
-  }
-}
 
 /**
  * Authentication Middleware
@@ -25,7 +11,7 @@ declare global {
  */
 export const authMiddleware = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -84,7 +70,7 @@ export const authMiddleware = async (
  */
 export const optionalAuthMiddleware = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -126,12 +112,12 @@ export const optionalAuthMiddleware = async (
  * Checks if user has required role(s)
  */
 export const requireRole = (...roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new UnauthorizedException('Authentication required', 'AUTH_REQUIRED'));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes((req.user as any).role)) {
       return next(
         new ForbiddenException(
           'You do not have permission to access this resource',

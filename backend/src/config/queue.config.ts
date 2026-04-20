@@ -71,7 +71,7 @@ export const emailWorker = connection
       async (job) => {
         logger.info(`Sending email job: ${job.id}`);
 
-        const { type, data } = job.data;
+        const { type, data: _data } = job.data;
 
         try {
           // TODO: Implement email sending based on type
@@ -195,9 +195,13 @@ export const closeQueues = async () => {
  */
 export const queueNoteProcessing = async (noteId: string) => {
   if (!notesQueue) {
-    logger.warn('Queue not enabled, processing note synchronously');
-    const { notesProcessor } = await import('@/modules/notes/notes.processor');
-    await notesProcessor.processNote(noteId);
+    logger.warn('Queue not enabled, processing note in background (fire-and-forget)');
+    // Fire-and-forget: don't await so the upload response is not blocked or crashed by processing errors
+    import('@/modules/notes/notes.processor').then(({ notesProcessor }) => {
+      notesProcessor.processNote(noteId).catch((err) => {
+        logger.error(`Background note processing failed for ${noteId}: ${err.message}`);
+      });
+    });
     return;
   }
 

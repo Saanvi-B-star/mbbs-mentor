@@ -17,7 +17,7 @@ export class PaymentController {
    * Get available subscription plans
    * GET /api/v1/payments/plans
    */
-  async getPlans(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getPlans(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await paymentService.getSubscriptionPlans();
 
@@ -36,7 +36,7 @@ export class PaymentController {
    */
   async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: CreateOrderDto = req.body;
 
       const result = await paymentService.createOrder(userId, data);
@@ -103,7 +103,7 @@ export class PaymentController {
    */
   async getPaymentHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const query: PaymentHistoryQuery = req.query as any;
 
       const result = await paymentService.getPaymentHistory(userId, query);
@@ -124,7 +124,7 @@ export class PaymentController {
    */
   async getActiveSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await paymentService.getActiveSubscription(userId);
 
@@ -143,7 +143,7 @@ export class PaymentController {
    */
   async cancelSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { reason } = req.body;
 
       const result = await paymentService.cancelSubscription(userId, reason);

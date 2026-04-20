@@ -14,8 +14,30 @@ export class TestController {
    */
   async generateTest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const criteria: GenerateTestCriteria = req.body;
+      const userId = (req.user as any).id;
+      let criteria: GenerateTestCriteria = req.body;
+
+      // Handle friendly subject names (e.g., from frontend): Translate "Anatomy" to CUID
+      if (criteria.subjectIds && criteria.subjectIds.length > 0) {
+        const importPrisma = await import('@/config');
+        const prisma = importPrisma.prisma;
+        
+        const stringNames = criteria.subjectIds.filter(s => !s.startsWith('c') || s.length < 20);
+        const validIds = criteria.subjectIds.filter(s => s.startsWith('c') && s.length >= 20);
+        
+        let newSubjectIds = [...validIds];
+        
+        if (stringNames.length > 0) {
+          const matchedSubjects = await prisma.subject.findMany({
+            where: { name: { in: stringNames } },
+            select: { id: true }
+          });
+          newSubjectIds = [...newSubjectIds, ...matchedSubjects.map(s => s.id)];
+        }
+        
+        // If they provided subjects but NONE matched anything valid in the DB, default to empty array
+        criteria.subjectIds = newSubjectIds;
+      }
 
       const result = await testService.generateTest(userId, criteria);
 
@@ -35,7 +57,7 @@ export class TestController {
    */
   async getUserTests(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req.user as any).id;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
@@ -57,8 +79,8 @@ export class TestController {
    */
   async getTestById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { id } = req.params;
+      const userId = (req.user as any).id;
+      const id = req.params.id as string;
 
       const result = await testService.getTestById(id, userId);
 
@@ -77,8 +99,8 @@ export class TestController {
    */
   async startTest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { id } = req.params;
+      const userId = (req.user as any).id;
+      const id = req.params.id as string;
 
       const result = await testService.startTest(userId, id);
 
@@ -98,8 +120,8 @@ export class TestController {
    */
   async submitAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { attemptId } = req.params;
+      const userId = (req.user as any).id;
+      const attemptId = req.params.attemptId as string;
       const answerData: Omit<SubmitAnswerDto, 'testAttemptId'> = req.body;
 
       await testService.submitAnswer(userId, attemptId, answerData);
@@ -119,8 +141,8 @@ export class TestController {
    */
   async submitTest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { attemptId } = req.params;
+      const userId = (req.user as any).id;
+      const attemptId = req.params.attemptId as string;
 
       const result = await testService.submitTest(userId, attemptId);
 
@@ -140,8 +162,8 @@ export class TestController {
    */
   async getTestResults(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { attemptId } = req.params;
+      const userId = (req.user as any).id;
+      const attemptId = req.params.attemptId as string;
 
       const result = await testService.getTestResults(userId, attemptId);
 
@@ -160,7 +182,7 @@ export class TestController {
    */
   async getUserAttempts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req.user as any).id;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const testId = req.query.testId as string | undefined;
@@ -183,8 +205,8 @@ export class TestController {
    */
   async deleteTest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { id } = req.params;
+      const userId = (req.user as any).id;
+      const id = req.params.id as string;
 
       await testService.deleteTest(id, userId);
 
@@ -203,8 +225,8 @@ export class TestController {
    */
   async getTestAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = (req as any).user.id;
-      const { attemptId } = req.params;
+      const userId = (req.user as any).id;
+      const attemptId = req.params.attemptId as string;
 
       const result = await testService.getTestAnalytics(attemptId, userId);
 

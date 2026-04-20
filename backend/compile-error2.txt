@@ -1,0 +1,320 @@
+src/app.ts(89,21): error TS6133: 'req' is declared but its value is never read.
+src/app.ts(102,15): error TS6133: 'req' is declared but its value is never read.
+src/app.ts(130,28): error TS6133: 'req' is declared but its value is never read.
+src/app.ts(170,31): error TS6133: 'req' is declared but its value is never read.
+src/config/aws.config.ts(12,18): error TS2345: Argument of type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to parameter of type '[] | [S3ClientConfig]'.
+  Type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to type '[S3ClientConfig]'.
+    Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'S3ClientConfig'.
+      Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'HttpAuthSchemeInputConfig'.
+        Types of property 'credentials' are incompatible.
+          Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity | AwsCredentialIdentityProvider | undefined'.
+            Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity'.
+              Types of property 'accessKeyId' are incompatible.
+                Type 'string | undefined' is not assignable to type 'string'.
+                  Type 'undefined' is not assignable to type 'string'.
+src/config/aws.config.ts(23,19): error TS2345: Argument of type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to parameter of type '[] | [SESClientConfig]'.
+  Type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to type '[SESClientConfig]'.
+    Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'SESClientConfig'.
+      Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'HttpAuthSchemeInputConfig'.
+        Types of property 'credentials' are incompatible.
+          Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity | AwsCredentialIdentityProvider | undefined'.
+            Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity'.
+              Types of property 'accessKeyId' are incompatible.
+                Type 'string | undefined' is not assignable to type 'string'.
+                  Type 'undefined' is not assignable to type 'string'.
+src/config/aws.config.ts(34,24): error TS2345: Argument of type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to parameter of type '[] | [TextractClientConfig]'.
+  Type '[{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }]' is not assignable to type '[TextractClientConfig]'.
+    Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'TextractClientConfig'.
+      Type '{ region: string; credentials: { readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }; }' is not assignable to type 'HttpAuthSchemeInputConfig'.
+        Types of property 'credentials' are incompatible.
+          Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity | AwsCredentialIdentityProvider | undefined'.
+            Type '{ readonly accessKeyId: string | undefined; readonly secretAccessKey: string | undefined; }' is not assignable to type 'AwsCredentialIdentity'.
+              Types of property 'accessKeyId' are incompatible.
+                Type 'string | undefined' is not assignable to type 'string'.
+                  Type 'undefined' is not assignable to type 'string'.
+src/config/passport.ts(2,38): error TS6133: 'Profile' is declared but its value is never read.
+src/config/passport.ts(2,47): error TS6133: 'VerifyCallback' is declared but its value is never read.
+src/config/queue.config.ts(74,23): error TS6133: 'data' is declared but its value is never read.
+src/middleware/auth.middleware.ts(13,7): error TS2717: Subsequent property declarations must have the same type.  Property 'user' must be of type 'User | undefined', but here has type '{ id: string; email: string; role: UserRole; } | undefined'.
+src/middleware/auth.middleware.ts(28,3): error TS6133: 'res' is declared but its value is never read.
+src/middleware/auth.middleware.ts(87,3): error TS6133: 'res' is declared but its value is never read.
+src/middleware/auth.middleware.ts(129,25): error TS6133: 'res' is declared but its value is never read.
+src/middleware/auth.middleware.ts(134,34): error TS2339: Property 'role' does not exist on type 'User'.
+src/middleware/error.middleware.ts(15,3): error TS6133: 'next' is declared but its value is never read.
+src/middleware/logging.middleware.ts(29,25): error TS2339: Property 'id' does not exist on type 'User'.
+src/middleware/logging.middleware.ts(83,27): error TS2339: Property 'id' does not exist on type 'User'.
+src/middleware/rate-limit.middleware.ts(2,22): error TS6133: 'HTTP_STATUS' is declared but its value is never read.
+src/middleware/token-check.middleware.ts(10,31): error TS6133: 'res' is declared but its value is never read.
+src/middleware/token-check.middleware.ts(18,31): error TS2339: Property 'id' does not exist on type 'User'.
+src/middleware/token-check.middleware.ts(50,3): error TS6133: 'res' is declared but its value is never read.
+src/middleware/token-check.middleware.ts(56,31): error TS2339: Property 'id' does not exist on type 'User'.
+src/middleware/validation.middleware.ts(10,31): error TS6133: 'res' is declared but its value is never read.
+src/middleware/validation.middleware.ts(36,31): error TS6133: 'res' is declared but its value is never read.
+src/middleware/validation.middleware.ts(58,31): error TS6133: 'res' is declared but its value is never read.
+src/middleware/validation.middleware.ts(80,31): error TS6133: 'res' is declared but its value is never read.
+src/modules/analytics/analytics.controller.ts(16,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.controller.ts(35,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.controller.ts(38,70): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.controller.ts(55,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.controller.ts(74,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.controller.ts(93,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.controller.ts(111,30): error TS6133: 'req' is declared but its value is never read.
+src/modules/analytics/analytics.controller.ts(152,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/analytics/analytics.repository.ts(57,14): error TS2339: Property 'note' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(139,13): error TS2353: Object literal may only specify known properties, and 'questions' does not exist in type 'TestInclude<DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(174,15): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.repository.ts(174,34): error TS7006: Parameter 'response' implicitly has an 'any' type.
+src/modules/analytics/analytics.repository.ts(251,14): error TS2339: Property 'note' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(266,27): error TS7006: Parameter 'test' implicitly has an 'any' type.
+src/modules/analytics/analytics.repository.ts(274,28): error TS7006: Parameter 'session' implicitly has an 'any' type.
+src/modules/analytics/analytics.repository.ts(282,30): error TS7006: Parameter 'conversation' implicitly has an 'any' type.
+src/modules/analytics/analytics.repository.ts(290,20): error TS7006: Parameter 'note' implicitly has an 'any' type.
+src/modules/analytics/analytics.repository.ts(341,24): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(342,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(349,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(356,24): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(357,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(364,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(365,36): error TS18047: 'session.duration' is possibly 'null'.
+src/modules/analytics/analytics.repository.ts(388,13): error TS2353: Object literal may only specify known properties, and 'questions' does not exist in type 'TestInclude<DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(438,14): error TS2339: Property 'payment' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(474,19): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(474,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/analytics/analytics.repository.ts(558,14): error TS2339: Property 'payment' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(573,14): error TS2339: Property 'payment' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/analytics/analytics.repository.ts(610,20): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/modules/analytics/analytics.service.ts(67,36): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(68,36): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(68,54): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(69,38): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(70,8): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(72,41): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(72,59): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(74,53): error TS18047: 'attempt.timeTaken' is possibly 'null'.
+src/modules/analytics/analytics.service.ts(78,13): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(78,32): error TS7006: Parameter 'response' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(105,13): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(105,32): error TS7006: Parameter 'response' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(132,13): error TS2339: Property 'responses' does not exist on type '{ status: AttemptStatus; id: string; userId: string; createdAt: Date; percentage: Decimal | null; timeTaken: number | null; totalScore: Decimal | null; maxScore: Decimal | null; startTime: Date; endTime: Date | null; testId: string; }'.
+src/modules/analytics/analytics.service.ts(132,32): error TS7006: Parameter 'response' implicitly has an 'any' type.
+src/modules/analytics/analytics.service.ts(173,9): error TS2322: Type 'Decimal | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/modules/analytics/analytics.service.ts(174,9): error TS2322: Type 'Decimal | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/modules/analytics/analytics.service.ts(176,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/modules/analytics/analytics.service.ts(293,26): error TS18048: 'weakestSubject' is possibly 'undefined'.
+src/modules/analytics/analytics.service.ts(293,79): error TS18048: 'weakestSubject' is possibly 'undefined'.
+src/modules/analytics/analytics.service.ts(336,11): error TS6133: 'testAttempts' is declared but its value is never read.
+src/modules/analytics/analytics.service.ts(350,11): error TS6133: 'subjectPerformance' is declared but its value is never read.
+src/modules/analytics/analytics.service.ts(398,28): error TS7053: Element implicitly has an 'any' type because expression of type '"prisma"' can't be used to index type 'AnalyticsRepository'.
+  Property 'prisma' does not exist on type 'AnalyticsRepository'.
+src/modules/auth/auth.controller.ts(3,23): error TS6133: 'API_MESSAGES' is declared but its value is never read.
+src/modules/auth/auth.controller.ts(85,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/auth/auth.controller.ts(104,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/auth/auth.controller.ts(179,16): error TS6133: 'req' is declared but its value is never read.
+src/modules/auth/auth.controller.ts(200,53): error TS6133: 'next' is declared but its value is never read.
+src/modules/auth/auth.service.ts(51,11): error TS6133: 'verificationToken' is declared but its value is never read.
+src/modules/auth/auth.service.ts(262,11): error TS6133: 'resetToken' is declared but its value is never read.
+src/modules/auth/auth.service.ts(272,23): error TS6133: 'token' is declared but its value is never read.
+src/modules/auth/auth.service.ts(272,38): error TS6133: 'newPassword' is declared but its value is never read.
+src/modules/auth/auth.service.ts(281,21): error TS6133: 'token' is declared but its value is never read.
+src/modules/auth/auth.types.ts(1,10): error TS6133: 'AuthProvider' is declared but its value is never read.
+src/modules/email/ses.client.ts(16,5): error TS2322: Type 'SESClient | null' is not assignable to type 'SESClient'.
+  Type 'null' is not assignable to type 'SESClient'.
+src/modules/email/ses.client.ts(17,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/llm/llm.controller.ts(86,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/llm/llm.controller.ts(159,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/llm/llm.controller.ts(201,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/llm/memory/memory.service.ts(21,31): error TS2339: Property 'llmChat' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/llm/memory/memory.service.ts(39,32): error TS2339: Property 'llmChat' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/llm/memory/memory.service.ts(58,32): error TS2339: Property 'llmChat' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/llm/memory/memory.service.ts(80,18): error TS2339: Property 'llmChat' does not exist on type 'PrismaClient<{ log: ({ level: "query"; emit: "event"; } | { level: "error"; emit: "stdout"; } | { level: "info"; emit: "stdout"; } | { level: "warn"; emit: "stdout"; })[]; }, "query", DefaultArgs>'.
+src/modules/notes/notes.controller.ts(16,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(46,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(68,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(88,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(110,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(130,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(151,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(180,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(201,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(222,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(245,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(267,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(287,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(320,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(343,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(366,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.controller.ts(387,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/notes/notes.processor.ts(11,22): error TS7016: Could not find a declaration file for module 'pdf-parse'. 'D:/Scriptlanes2/mbbs-mentor/backend/node_modules/pdf-parse/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/pdf-parse` if it exists or add a new declaration (.d.ts) file containing `declare module 'pdf-parse';`
+src/modules/notes/notes.processor.ts(145,28): error TS18047: 'textractClient' is possibly 'null'.
+src/modules/notes/notes.processor.ts(198,28): error TS18047: 'textractClient' is possibly 'null'.
+src/modules/notes/notes.processor.ts(270,17): error TS6133: 'analyzeDocumentStructure' is declared but its value is never read.
+src/modules/notes/notes.processor.ts(285,28): error TS18047: 'textractClient' is possibly 'null'.
+src/modules/notes/notes.service.ts(2,22): error TS6133: 'countWords' is declared but its value is never read.
+src/modules/notes/notes.service.ts(3,49): error TS2305: Module '"@/shared/exceptions"' has no exported member 'BadRequestException'.
+src/modules/notes/notes.service.ts(175,5): error TS6133: 'count' is declared but its value is never read.
+src/modules/payment/payment.controller.ts(20,18): error TS6133: 'req' is declared but its value is never read.
+src/modules/payment/payment.controller.ts(39,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/payment/payment.controller.ts(106,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/payment/payment.controller.ts(127,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/payment/payment.controller.ts(146,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/payment/payment.service.ts(81,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/payment/razorpay.client.ts(14,27): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(38,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'KeyObject | BinaryLike'.
+  Type 'undefined' is not assignable to type 'KeyObject | BinaryLike'.
+src/modules/payment/razorpay.client.ts(54,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'KeyObject | BinaryLike'.
+  Type 'undefined' is not assignable to type 'KeyObject | BinaryLike'.
+src/modules/payment/razorpay.client.ts(69,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(80,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(99,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(110,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(131,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(142,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/payment/razorpay.client.ts(153,20): error TS18047: 'razorpayClient' is possibly 'null'.
+src/modules/question/question.controller.ts(59,60): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(100,59): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(120,44): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(139,60): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(209,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(230,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.controller.ts(250,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/question/question.repository.ts(10,1): error TS6133: 'QuestionType' is declared but its value is never read.
+src/modules/question/question.service.ts(14,3): error TS2305: Module '"@/shared/exceptions"' has no exported member 'BadRequestException'.
+src/modules/question/question.service.ts(15,3): error TS6133: 'ConflictException' is declared but its value is never read.
+src/modules/question/question.service.ts(190,38): error TS2345: Argument of type 'CreateQuestionDto | undefined' is not assignable to parameter of type 'CreateQuestionDto'.
+  Type 'undefined' is not assignable to type 'CreateQuestionDto'.
+src/modules/question/question.service.ts(193,13): error TS18048: 'questionData' is possibly 'undefined'.
+src/modules/question/question.service.ts(194,40): error TS18048: 'questionData' is possibly 'undefined'.
+src/modules/question/question.service.ts(197,41): error TS2345: Argument of type 'CreateQuestionDto | undefined' is not assignable to parameter of type 'CreateQuestionDto'.
+  Type 'undefined' is not assignable to type 'CreateQuestionDto'.
+src/modules/question/question.service.ts(202,21): error TS2532: Object is possibly 'undefined'.
+src/modules/question/question.service.ts(297,21): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/question/question.service.ts(307,21): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/question/question.service.ts(315,21): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/question/question.service.ts(324,21): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/rag/rag.service.ts(183,20): error TS2339: Property 'ragIndex' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/rag/rag.service.ts(216,34): error TS2339: Property 'ragIndex' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/rag/rag.service.ts(264,24): error TS2339: Property 'ragIndex' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/rag/rag.service.ts(272,26): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/modules/rag/rag.service.ts(300,36): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/modules/rag/rag.service.ts(318,31): error TS2339: Property 'ragIndex' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/studentGoals/studentGoals.controller.ts(15,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(36,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(55,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(76,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(93,27): error TS6133: 'req' is declared but its value is never read.
+src/modules/studentGoals/studentGoals.controller.ts(112,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(133,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studentGoals/studentGoals.controller.ts(154,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/studyMaterial/studyMaterial.controller.ts(19,28): error TS7030: Not all code paths return a value.
+src/modules/subject/subject.controller.ts(45,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/subject/subject.controller.ts(85,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/subject/subject.controller.ts(105,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/subject/subject.controller.ts(124,64): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/subject/subject.controller.ts(143,59): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/subject/subject.service.ts(12,3): error TS2305: Module '"@/shared/exceptions"' has no exported member 'BadRequestException'.
+src/modules/test/test.controller.ts(63,52): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(83,58): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(105,46): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(125,59): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(146,63): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(189,36): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.controller.ts(209,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/test/test.service.ts(14,3): error TS2305: Module '"@/shared/exceptions"' has no exported member 'BadRequestException'.
+src/modules/test/test.service.ts(46,21): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(102,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(123,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(146,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(179,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(198,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.service.ts(256,21): error TS2339: Property 'UNAUTHORIZED' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/test/test.types.ts(1,32): error TS6133: 'AttemptStatus' is declared but its value is never read.
+src/modules/token/token.controller.ts(17,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/token/token.controller.ts(36,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/token/token.controller.ts(59,60): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/token/token.controller.ts(76,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/token/token.controller.ts(97,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/topic/topic.controller.ts(45,54): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(85,53): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(105,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(124,60): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(143,59): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(162,63): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.controller.ts(181,55): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/topic/topic.repository.ts(359,18): error TS2561: Object literal may only specify known properties, but 'topicId' does not exist in type 'BookmarkWhereInput'. Did you mean to write 'topic'?
+src/modules/topic/topic.repository.ts(398,13): error TS7022: 'parent' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/modules/topic/topic.service.ts(13,3): error TS2305: Module '"@/shared/exceptions"' has no exported member 'BadRequestException'.
+src/modules/topic/topic.service.ts(84,23): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/topic/topic.service.ts(126,25): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/topic/topic.service.ts(136,25): error TS2339: Property 'VALIDATION_ERROR' does not exist on type '{ readonly AUTH_INVALID_CREDENTIALS: "AUTH_1001"; readonly AUTH_TOKEN_EXPIRED: "AUTH_1002"; readonly AUTH_TOKEN_INVALID: "AUTH_1003"; readonly AUTH_USER_NOT_FOUND: "AUTH_1004"; ... 34 more ...; readonly SERVICE_UNAVAILABLE: "ERR_0003"; }'.
+src/modules/user/user.controller.ts(17,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/user/user.controller.ts(36,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/user/user.controller.ts(57,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/user/user.controller.ts(76,32): error TS2339: Property 'id' does not exist on type 'User'.
+src/modules/user/user.controller.ts(98,52): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/shared/utils/crypto.utils.ts(25,14): error TS2769: No overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+src/shared/utils/crypto.utils.ts(34,14): error TS2769: No overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+src/shared/utils/s3.utils.ts(27,9): error TS18047: 's3Client' is possibly 'null'.
+src/shared/utils/s3.utils.ts(65,34): error TS2345: Argument of type 'S3Client | null' is not assignable to parameter of type 'Client<any, ServiceInputTypes, MetadataBearer, any>'.
+  Type 'null' is not assignable to type 'Client<any, ServiceInputTypes, MetadataBearer, any>'.
+src/shared/utils/s3.utils.ts(82,23): error TS2345: Argument of type 'S3Client | null' is not assignable to parameter of type 'Client<any, ServiceInputTypes, MetadataBearer, any>'.
+  Type 'null' is not assignable to type 'Client<any, ServiceInputTypes, MetadataBearer, any>'.
+src/shared/utils/s3.utils.ts(94,9): error TS18047: 's3Client' is possibly 'null'.
+src/shared/utils/string.utils.ts(84,26): error TS18048: 'username' is possibly 'undefined'.
+src/shared/utils/string.utils.ts(84,55): error TS18048: 'username' is possibly 'undefined'.
+src/shared/utils/string.utils.ts(84,71): error TS18048: 'username' is possibly 'undefined'.
+src/types/api.types.ts(5,10): error TS6133: 'User' is declared but its value is never read.

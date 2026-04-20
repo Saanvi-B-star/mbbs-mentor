@@ -13,7 +13,7 @@ export class AnalyticsController {
    */
   async getUserAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await analyticsService.getUserAnalytics(userId);
 
@@ -32,8 +32,8 @@ export class AnalyticsController {
    */
   async getTestAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
-      const { attemptId } = req.params;
+      const userId = (req.user as any).id;
+      const attemptId = req.params.attemptId as string;
 
       const result = await analyticsService.getTestAnalytics(userId, attemptId);
 
@@ -52,7 +52,7 @@ export class AnalyticsController {
    */
   async getSubjectComparison(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await analyticsService.getSubjectComparison(userId);
 
@@ -71,7 +71,7 @@ export class AnalyticsController {
    */
   async getTopicMastery(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await analyticsService.getTopicMastery(userId);
 
@@ -90,7 +90,7 @@ export class AnalyticsController {
    */
   async getStudyTimeAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const period = (req.query.period as string) || '30d';
 
       const result = await analyticsService.getStudyTimeAnalytics(userId, period);
@@ -108,7 +108,7 @@ export class AnalyticsController {
    * Get platform analytics (Admin only)
    * GET /api/v1/analytics/platform
    */
-  async getPlatformAnalytics(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getPlatformAnalytics(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await analyticsService.getPlatformAnalytics();
 
@@ -149,7 +149,7 @@ export class AnalyticsController {
    */
   async getRecommendations(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await analyticsService.generateRecommendations(userId);
 

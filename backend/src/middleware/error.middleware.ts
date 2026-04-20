@@ -12,7 +12,7 @@ export const errorMiddleware = (
   error: Error | BaseException,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   // Log error
   logger.error('Error occurred:', {

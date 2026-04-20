@@ -81,6 +81,7 @@ export const removeFileExtension = (filename: string): string => {
  */
 export const maskEmail = (email: string): string => {
   const [username, domain] = email.split('@');
+  if (!username || !domain) return email;
   const maskedUsername = username.charAt(0) + '***' + username.charAt(username.length - 1);
   return `${maskedUsername}@${domain}`;
 };

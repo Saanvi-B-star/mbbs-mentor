@@ -78,7 +78,7 @@ export class PaymentService {
       orderId: razorpayOrder.id,
       amount,
       currency,
-      razorpayKeyId: razorpayConfig.keyId,
+      razorpayKeyId: razorpayConfig.keyId!,
       planDetails: {
         name: plan.name,
         displayName: plan.displayName,

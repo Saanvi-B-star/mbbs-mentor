@@ -81,7 +81,7 @@ export class TopicService {
       if (parentTopic && parentTopic.subjectId !== data.subjectId) {
         throw new BadRequestException(
           'Parent topic must belong to the same subject',
-          ERROR_CODES.VALIDATION_ERROR
+          ERROR_CODES.VALIDATION_FAILED
         );
       }
     }
@@ -123,7 +123,7 @@ export class TopicService {
         if (hasCircular) {
           throw new BadRequestException(
             'Cannot set parent topic: circular reference detected',
-            ERROR_CODES.VALIDATION_ERROR
+            ERROR_CODES.VALIDATION_FAILED
           );
         }
 
@@ -133,7 +133,7 @@ export class TopicService {
         if (parentTopic && parentTopic.subjectId !== targetSubjectId) {
           throw new BadRequestException(
             'Parent topic must belong to the same subject',
-            ERROR_CODES.VALIDATION_ERROR
+            ERROR_CODES.VALIDATION_FAILED
           );
         }
       }

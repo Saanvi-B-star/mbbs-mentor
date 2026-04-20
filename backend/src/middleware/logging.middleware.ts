@@ -26,7 +26,7 @@ export const loggingMiddleware = async (
       path: req.path,
       statusCode: res.statusCode,
       duration: `${duration}ms`,
-      userId: req.user?.id,
+      userId: (req.user as any)?.id,
       ip: req.ip,
     });
 
@@ -80,7 +80,7 @@ const logToDatabase = async (
         statusCode: res.statusCode,
         requestBody: req.body || null,
         responseBody: res.statusCode >= 400 ? parsedResponse : null, // Only log response body on errors
-        userId: req.user?.id || null,
+        userId: (req.user as any)?.id || null,
         ipAddress: req.ip || req.socket.remoteAddress || null,
         userAgent: req.headers['user-agent'] || null,
         duration,

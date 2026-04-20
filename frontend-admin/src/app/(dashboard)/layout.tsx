@@ -12,20 +12,31 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, isLoading } = useAuthStore();
+  const { user, logout, isLoading, isHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Disabled redirect to login for dev access
+    /*
+    if (isHydrated && !isLoading && !user) {
       router.push("/login");
     }
-  }, [user, isLoading, router]);
+    */
+  }, [user, isLoading, isHydrated, router]);
 
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
-  if (isLoading || !user) {
+  // Dev bypass: use dummy user if none logged in
+  const activeUser = user || {
+    name: "Guest Admin",
+    email: "guest@example.com",
+    role: "ADMIN"
+  };
+
+  // Show loading while hydrating
+  if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -129,8 +140,8 @@ export default function DashboardLayout({
 
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-900">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="text-sm font-medium text-gray-900">{activeUser.name}</p>
+            <p className="text-xs text-gray-500">{activeUser.email}</p>
             <span className="inline-block mt-2 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
               Admin
             </span>

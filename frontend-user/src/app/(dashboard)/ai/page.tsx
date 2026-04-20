@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api-client";
+import ReactMarkdown from "react-markdown";
+import Mermaid from "@/components/common/Mermaid";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  sources?: any[];
 }
-
 const initialMessages: Message[] = [
   {
     id: "1",
@@ -46,6 +49,48 @@ export default function AIAssistantPage() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await apiClient.get("/llm/history");
+      const historyData = res.data?.data || [];
+      
+      if (historyData.length > 0) {
+        const historyMessages: Message[] = historyData.flatMap((chat: any) => [
+          {
+            id: `${chat.id}-user`,
+            role: "user",
+            content: chat.question,
+            timestamp: new Date(chat.createdAt),
+          },
+          {
+            id: `${chat.id}-assistant`,
+            role: "assistant",
+            content: chat.response,
+            timestamp: new Date(chat.createdAt),
+          }
+        ]);
+        
+        setMessages([...initialMessages, ...historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat history:", error);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!confirm("Are you sure you want to clear your chat history? This cannot be undone.")) return;
+    try {
+      await apiClient.delete("/llm/history");
+      setMessages(initialMessages);
+    } catch (error) {
+      console.error("Failed to clear history:", error);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -60,17 +105,31 @@ export default function AIAssistantPage() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await apiClient.post("/llm/chat", { question: input });
+      const result = res.data?.data;
+      const answer = result?.answer || "Sorry, I couldn't generate a response right now.";
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Great question about "${input}"! Let me help you understand this concept better.\n\nThis is a mock response demonstrating the AI mentor interface. In a production environment, this would connect to an AI service to provide accurate, helpful explanations aligned with your MBBS curriculum.\n\nWould you like me to explain any specific aspect in more detail?`,
+        content: answer,
         timestamp: new Date(),
+        sources: result?.sources,
       };
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (error: any) {
+      console.error("AI Error:", error);
+      const errResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `Error connecting to AI: ${error.response?.data?.message || "Internal server error"}`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -90,10 +149,15 @@ export default function AIAssistantPage() {
             Your AI medical mentor, available 24/7
           </p>
         </div>
-        <Badge variant="outline" className="gap-1.5 px-3 py-1.5">
-          <Sparkles className="h-3.5 w-3.5" />
-          AI-Powered
-        </Badge>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={handleClearHistory} className="text-gray-500 hover:text-red-600">
+            Clear History
+          </Button>
+          <Badge variant="outline" className="gap-1.5 px-3 py-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            AI-Powered
+          </Badge>
+        </div>
       </div>
 
       {/* Chat Container */}
@@ -106,10 +170,7 @@ export default function AIAssistantPage() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${message.role === "user"
-                    ? "justify-end"
-                    : "justify-start"
-                    }`}
+                  className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {message.role === "assistant" && (
                     <Avatar className="h-8 w-8 bg-gradient-to-br from-blue-600 to-blue-500 flex-shrink-0">
@@ -120,32 +181,61 @@ export default function AIAssistantPage() {
                   )}
 
                   <div
-                    className={`max-w-[75%] rounded-xl p-4 ${message.role === "user"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-900"
-                      }`}
+                    className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-sm ${
+                      message.role === "user" 
+                        ? "bg-blue-600 text-white rounded-tr-none" 
+                        : "bg-white border border-gray-100 text-gray-900 rounded-tl-none"
+                    }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {message.content}
-                    </p>
-                    <p
-                      className={`text-xs mt-2 ${message.role === "user"
-                        ? "text-blue-100"
-                        : "text-gray-500"
-                        }`}
-                    >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    {message.role === "assistant" ? (
+                      <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-headings:text-blue-900 prose-headings:font-bold prose-ul:my-2 prose-li:my-0 mt-1">
+                        <ReactMarkdown
+                          components={{
+                            code({ node, inline, className, children, ...props }: any) {
+                              const match = /language-(\w+)/.exec(className || "");
+                              if (!inline && match && match[1] === "mermaid") {
+                                return <Mermaid chart={String(children).replace(/\n$/, "")} />;
+                              }
+                              return (
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              );
+                            },
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </p>
+                    )}
+                    
+                    {message.sources && message.sources.length > 0 && (
+                      <div className={`mt-4 pt-4 border-t ${message.role === "user" ? "border-white/20" : "border-gray-100"}`}>
+                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${message.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
+                          Sources from your notes:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {message.sources.map((source, idx) => (
+                            <Badge key={idx} variant="secondary" className={`text-[10px] border-none ${message.role === "user" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
+                              {source.metadata?.title || "Untitled Note"}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className={`text-[10px] mt-2 ${message.role === "user" ? "text-blue-100" : "text-gray-400"}`}>
+                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
 
                   {message.role === "user" && (
                     <Avatar className="h-8 w-8 bg-blue-500 flex-shrink-0">
-                      <AvatarFallback className="text-white text-xs font-semibold">
-                        U
-                      </AvatarFallback>
+                      <AvatarFallback className="text-white text-xs font-semibold">U</AvatarFallback>
                     </Avatar>
                   )}
                 </div>
@@ -161,19 +251,12 @@ export default function AIAssistantPage() {
                   <div className="bg-gray-100 rounded-xl p-4">
                     <div className="flex gap-1">
                       <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-                      <div
-                        className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"
-                        style={{ animationDelay: "0.1s" }}
-                      />
-                      <div
-                        className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"
-                        style={{ animationDelay: "0.2s" }}
-                      />
+                      <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" style={{ animationDelay: "0.1s" }} />
+                      <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" style={{ animationDelay: "0.2s" }} />
                     </div>
                   </div>
                 </div>
               )}
-
               <div ref={messagesEndRef} />
             </div>
 

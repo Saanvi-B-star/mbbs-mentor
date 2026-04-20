@@ -7,7 +7,7 @@ import { prisma } from '@/config';
  * Verifies user has sufficient token balance for an operation
  */
 export const requireTokens = (requiredTokens: number) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         return next(new Error('Authentication required'));
@@ -15,7 +15,7 @@ export const requireTokens = (requiredTokens: number) => {
 
       // Get user's current token balance
       const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
+        where: { id: (req.user as any).id },
         select: { currentTokenBalance: true },
       });
 
@@ -47,13 +47,13 @@ export const requireTokens = (requiredTokens: number) => {
  */
 export const checkTokenBalance = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
     if (req.user) {
       const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
+        where: { id: (req.user as any).id },
         select: { currentTokenBalance: true },
       });
 

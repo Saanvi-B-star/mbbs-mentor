@@ -49,12 +49,12 @@ export class AnalyticsRepository {
       }),
 
       // AI interactions
-      prisma.aIConversation.count({
+      prisma.llmChat.count({
         where: { userId },
       }),
 
       // Notes uploaded
-      prisma.note.count({
+      prisma.userNote.count({
         where: { userId },
       }),
 
@@ -76,12 +76,12 @@ export class AnalyticsRepository {
     return {
       totalTests,
       completedTests,
-      totalStudyTime: Math.floor((totalStudyTime._sum.duration || 0) / 60), // Convert to minutes
-      totalTokensSpent: Math.abs(totalTokensSpent._sum.amount || 0),
+      totalStudyTime: Math.floor((totalStudyTime._sum?.duration || 0) / 60), // Convert to minutes
+      totalTokensSpent: Math.abs(Number(totalTokensSpent._sum?.amount || 0)),
       aiInteractions,
       notesUploaded,
       bookmarkCount,
-      averageScore: averageScore._avg.percentage
+      averageScore: averageScore._avg?.percentage
         ? Number(averageScore._avg.percentage.toFixed(2))
         : 0,
     };
@@ -136,7 +136,7 @@ export class AnalyticsRepository {
       include: {
         test: {
           include: {
-            questions: {
+            testQuestions: {
               include: {
                 question: {
                   include: {
@@ -151,7 +151,7 @@ export class AnalyticsRepository {
             },
           },
         },
-        responses: {
+        testAnswers: {
           include: {
             question: {
               include: {
@@ -171,8 +171,10 @@ export class AnalyticsRepository {
     const subjectMap = new Map<string, any>();
 
     testAttempts.forEach((attempt) => {
-      attempt.responses.forEach((response) => {
-        const subject = response.question.topic.subject;
+      attempt.testAnswers.forEach((response) => {
+        const topic = response.question.topic;
+        if (!topic) return;
+        const subject = topic.subject;
         const subjectId = subject.id;
 
         if (!subjectMap.has(subjectId)) {
@@ -181,11 +183,13 @@ export class AnalyticsRepository {
             subjectName: subject.name,
             questionsAttempted: 0,
             correctAnswers: 0,
+            testIds: new Set<string>(),
           });
         }
 
         const subjectData = subjectMap.get(subjectId);
         subjectData.questionsAttempted++;
+        subjectData.testIds.add(attempt.id);
         if (response.isCorrect) {
           subjectData.correctAnswers++;
         }
@@ -197,7 +201,7 @@ export class AnalyticsRepository {
       ...subject,
       averageScore: (subject.correctAnswers / subject.questionsAttempted) * 100,
       accuracy: (subject.correctAnswers / subject.questionsAttempted) * 100,
-      testsAttempted: testAttempts.length,
+      testsAttempted: subject.testIds.size,
     }));
 
     return subjects;
@@ -236,19 +240,19 @@ export class AnalyticsRepository {
       }),
 
       // Recent AI conversations
-      prisma.aIConversation.findMany({
+      prisma.llmChat.findMany({
         where: { userId },
         select: {
           id: true,
           createdAt: true,
-          title: true,
+          question: true,
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
       }),
 
       // Recent notes
-      prisma.note.findMany({
+      prisma.userNote.findMany({
         where: { userId },
         select: {
           id: true,
@@ -274,15 +278,18 @@ export class AnalyticsRepository {
     studySessions.forEach((session) => {
       activities.push({
         type: 'study',
-        description: `Studied for ${Math.floor(session.duration / 60)} minutes`,
+        description: `Studied for ${Math.floor((session.duration || 0) / 60)} minutes`,
         timestamp: session.createdAt,
       });
     });
 
     aiConversations.forEach((conversation) => {
+      const title = conversation.question.length > 50 
+        ? conversation.question.substring(0, 50) + "..." 
+        : conversation.question;
       activities.push({
         type: 'ai',
-        description: `AI Chat: ${conversation.title || 'New conversation'}`,
+        description: `AI Chat: ${title}`,
         timestamp: conversation.createdAt,
       });
     });
@@ -337,7 +344,7 @@ export class AnalyticsRepository {
     const dateMap = new Map<string, any>();
 
     testAttempts.forEach((attempt) => {
-      const date = attempt.createdAt.toISOString().split('T')[0];
+      const date = attempt.createdAt.toISOString().split('T')[0]!;
       if (!dateMap.has(date)) {
         dateMap.set(date, {
           date,
@@ -352,7 +359,7 @@ export class AnalyticsRepository {
     });
 
     studySessions.forEach((session) => {
-      const date = session.createdAt.toISOString().split('T')[0];
+      const date = session.createdAt.toISOString().split('T')[0]!;
       if (!dateMap.has(date)) {
         dateMap.set(date, {
           date,
@@ -362,7 +369,7 @@ export class AnalyticsRepository {
         });
       }
       const data = dateMap.get(date);
-      data.studyTime += Math.floor(session.duration / 60);
+      data.studyTime += Math.floor((session.duration || 0) / 60);
     });
 
     // Calculate average scores and format
@@ -385,14 +392,14 @@ export class AnalyticsRepository {
       include: {
         test: {
           include: {
-            questions: {
+            testQuestions: {
               include: {
                 question: true,
               },
             },
           },
         },
-        responses: {
+        testAnswers: {
           include: {
             question: {
               include: {
@@ -435,8 +442,8 @@ export class AnalyticsRepository {
       prisma.question.count(),
 
       // Total revenue
-      prisma.payment.aggregate({
-        where: { status: 'SUCCESS' },
+      prisma.paymentTransaction.aggregate({
+        where: { status: 'COMPLETED' },
         _sum: { amount: true },
       }),
     ]);
@@ -446,7 +453,7 @@ export class AnalyticsRepository {
       activeUsers,
       totalTests,
       totalQuestions,
-      totalRevenue: totalRevenue._sum.amount || 0,
+      totalRevenue: Number(totalRevenue._sum?.amount || 0),
     };
   }
 
@@ -470,7 +477,7 @@ export class AnalyticsRepository {
     // Group by date
     const dateMap = new Map<string, number>();
     users.forEach((user) => {
-      const date = user.createdAt.toISOString().split('T')[0];
+      const date = user.createdAt.toISOString().split('T')[0]!;
       dateMap.set(date, (dateMap.get(date) || 0) + 1);
     });
 
@@ -545,7 +552,7 @@ export class AnalyticsRepository {
    * Get revenue stats (Admin only)
    */
   async getRevenueStats(dateRange?: DateRangeFilter) {
-    const where: any = { status: 'SUCCESS' };
+    const where: any = { status: 'COMPLETED' };
 
     if (dateRange?.startDate || dateRange?.endDate) {
       where.createdAt = {};
@@ -555,7 +562,7 @@ export class AnalyticsRepository {
 
     const [totalRevenue, revenueByPlan, payments] = await Promise.all([
       // Total revenue
-      prisma.payment.aggregate({
+      prisma.paymentTransaction.aggregate({
         where,
         _sum: { amount: true },
       }),
@@ -570,7 +577,7 @@ export class AnalyticsRepository {
       }),
 
       // All payments for timeline
-      prisma.payment.findMany({
+      prisma.paymentTransaction.findMany({
         where,
         select: {
           amount: true,
@@ -581,7 +588,7 @@ export class AnalyticsRepository {
     ]);
 
     return {
-      totalRevenue: totalRevenue._sum.amount || 0,
+      totalRevenue: Number(totalRevenue._sum?.amount || 0),
       revenueByPlan,
       payments,
     };
@@ -607,7 +614,7 @@ export class AnalyticsRepository {
           planId: sub.planId,
           planName: plan?.name || 'Unknown',
           activeSubscriptions: sub._count.id,
-          revenue: (plan?.price || 0) * sub._count.id,
+          revenue: (Number(plan?.price) || 0) * sub._count.id,
         };
       })
     );

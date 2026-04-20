@@ -14,7 +14,7 @@ export class TokenController {
    */
   async getBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await tokenService.getBalance(userId);
 
@@ -33,7 +33,7 @@ export class TokenController {
    */
   async getTransactions(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const query: TokenTransactionQuery = req.query as any;
 
       const result = await tokenService.getTransactions(userId, query);
@@ -54,7 +54,7 @@ export class TokenController {
    */
   async getTransactionById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { transactionId } = req.params;
+      const transactionId = req.params.transactionId as string;
 
       const result = await tokenService.getTransactionById(transactionId);
 
@@ -73,7 +73,7 @@ export class TokenController {
    */
   async getUsageByFeature(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
@@ -94,7 +94,7 @@ export class TokenController {
    */
   async deductTokens(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { amount, feature, referenceId, description }: Omit<DeductTokensDto, 'userId'> =
         req.body;
 

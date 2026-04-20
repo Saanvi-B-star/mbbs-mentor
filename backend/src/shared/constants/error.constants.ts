@@ -8,6 +8,8 @@
  */
 export const ERROR_CODES = {
   // Authentication Errors (1xxx)
+  AUTH_UNAUTHORIZED: 'AUTH_1000',
+  AUTH_FORBIDDEN: 'AUTH_1010',
   AUTH_INVALID_CREDENTIALS: 'AUTH_1001',
   AUTH_TOKEN_EXPIRED: 'AUTH_1002',
   AUTH_TOKEN_INVALID: 'AUTH_1003',
@@ -16,7 +18,7 @@ export const ERROR_CODES = {
   AUTH_ACCOUNT_BANNED: 'AUTH_1006',
   AUTH_ACCOUNT_INACTIVE: 'AUTH_1007',
 
-  // Validation Errors (2xxx)
+  VALIDATION_ERROR: 'VAL_2001',
   VALIDATION_FAILED: 'VAL_2001',
   VALIDATION_EMAIL_INVALID: 'VAL_2002',
   VALIDATION_PASSWORD_WEAK: 'VAL_2003',
@@ -65,6 +67,8 @@ export const ERROR_CODES = {
   INTERNAL_SERVER_ERROR: 'ERR_0001',
   RATE_LIMIT_EXCEEDED: 'ERR_0002',
   SERVICE_UNAVAILABLE: 'ERR_0003',
+  UNAUTHORIZED: 'AUTH_1000',
+  FORBIDDEN: 'AUTH_1010',
 } as const;
 
 /**
@@ -72,6 +76,8 @@ export const ERROR_CODES = {
  */
 export const ERROR_MESSAGES = {
   // Authentication
+  [ERROR_CODES.AUTH_UNAUTHORIZED]: 'Unauthorized access',
+  [ERROR_CODES.AUTH_FORBIDDEN]: 'Forbidden access',
   [ERROR_CODES.AUTH_INVALID_CREDENTIALS]: 'Invalid email or password',
   [ERROR_CODES.AUTH_TOKEN_EXPIRED]: 'Authentication token has expired',
   [ERROR_CODES.AUTH_TOKEN_INVALID]: 'Invalid authentication token',

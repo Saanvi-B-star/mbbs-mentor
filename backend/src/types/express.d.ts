@@ -12,6 +12,7 @@ declare global {
         role: UserRole;
       };
       tokenBalance?: number;
+      sessionId?: string;
     }
   }
 }

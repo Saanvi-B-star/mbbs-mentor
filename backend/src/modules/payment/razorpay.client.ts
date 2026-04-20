@@ -11,7 +11,7 @@ export class RazorpayClientService {
    */
   async createOrder(amount: number, currency: string, receipt: string, notes?: any) {
     try {
-      const order = await razorpayClient.orders.create({
+      const order = await (razorpayClient as any).orders.create({
         amount: amount * 100, // Convert to paise
         currency,
         receipt,
@@ -35,7 +35,7 @@ export class RazorpayClientService {
     try {
       const text = `${orderId}|${paymentId}`;
       const expectedSignature = crypto
-        .createHmac('sha256', razorpayConfig.keySecret)
+        .createHmac('sha256', (razorpayConfig as any).keySecret || '')
         .update(text)
         .digest('hex');
 
@@ -51,7 +51,7 @@ export class RazorpayClientService {
   verifyWebhookSignature(body: string, signature: string): boolean {
     try {
       const expectedSignature = crypto
-        .createHmac('sha256', razorpayConfig.webhookSecret)
+        .createHmac('sha256', (razorpayConfig as any).webhookSecret || '')
         .update(body)
         .digest('hex');
 
@@ -66,7 +66,7 @@ export class RazorpayClientService {
    */
   async getPayment(paymentId: string) {
     try {
-      return await razorpayClient.payments.fetch(paymentId);
+      return await (razorpayClient as any).payments.fetch(paymentId);
     } catch (error: any) {
       throw new Error(`Failed to fetch payment: ${error.message}`);
     }
@@ -77,7 +77,7 @@ export class RazorpayClientService {
    */
   async getOrder(orderId: string) {
     try {
-      return await razorpayClient.orders.fetch(orderId);
+      return await (razorpayClient as any).orders.fetch(orderId);
     } catch (error: any) {
       throw new Error(`Failed to fetch order: ${error.message}`);
     }
@@ -96,7 +96,7 @@ export class RazorpayClientService {
         refundData.amount = amount * 100; // Convert to paise
       }
 
-      return await razorpayClient.payments.refund(paymentId, refundData);
+      return await (razorpayClient as any).payments.refund(paymentId, refundData);
     } catch (error: any) {
       throw new Error(`Refund creation failed: ${error.message}`);
     }
@@ -107,7 +107,7 @@ export class RazorpayClientService {
    */
   async getRefund(paymentId: string, refundId: string) {
     try {
-      return await razorpayClient.payments.fetchRefund(paymentId, refundId);
+      return await (razorpayClient as any).payments.fetchRefund(paymentId, refundId);
     } catch (error: any) {
       throw new Error(`Failed to fetch refund: ${error.message}`);
     }
@@ -128,7 +128,7 @@ export class RazorpayClientService {
         subscriptionData.customer_id = customerId;
       }
 
-      return await razorpayClient.subscriptions.create(subscriptionData);
+      return await (razorpayClient as any).subscriptions.create(subscriptionData);
     } catch (error: any) {
       throw new Error(`Subscription creation failed: ${error.message}`);
     }
@@ -139,7 +139,7 @@ export class RazorpayClientService {
    */
   async getSubscription(subscriptionId: string) {
     try {
-      return await razorpayClient.subscriptions.fetch(subscriptionId);
+      return await (razorpayClient as any).subscriptions.fetch(subscriptionId);
     } catch (error: any) {
       throw new Error(`Failed to fetch subscription: ${error.message}`);
     }
@@ -150,7 +150,7 @@ export class RazorpayClientService {
    */
   async cancelSubscription(subscriptionId: string, cancelAtCycleEnd: boolean = false) {
     try {
-      return await razorpayClient.subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
+      return await (razorpayClient as any).subscriptions.cancel(subscriptionId, cancelAtCycleEnd);
     } catch (error: any) {
       throw new Error(`Subscription cancellation failed: ${error.message}`);
     }

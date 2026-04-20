@@ -1,15 +1,38 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth.store";
+import apiClient from "@/lib/api-client";
 
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [platformData, setPlatformData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchPlatformStats = async () => {
+      try {
+        const res = await apiClient.get('/analytics/platform');
+        setPlatformData(res.data.data);
+      } catch (e) {
+        console.error("Failed to load platform stats", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlatformStats();
+  }, []);
+
+  const totalUsersValue = platformData?.totalUsers?.toString() || "0";
+  const activeSessionsValue = platformData?.activeUsers?.toString() || "0";
+  const totalTestsValue = platformData?.totalTests?.toString() || "0";
+  const totalQuestionsValue = platformData?.totalQuestions?.toString() || "0";
 
   const stats = [
     {
       label: "Total Users",
-      value: "1,234",
-      change: "+12%",
+      value: totalUsersValue,
+      change: "Active",
       changeType: "positive",
       icon: (
         <svg
@@ -28,9 +51,9 @@ export default function AdminDashboardPage() {
       ),
     },
     {
-      label: "Active Sessions",
-      value: "842",
-      change: "+8%",
+      label: "Active Users (30d)",
+      value: activeSessionsValue,
+      change: "Active",
       changeType: "positive",
       icon: (
         <svg
@@ -49,9 +72,9 @@ export default function AdminDashboardPage() {
       ),
     },
     {
-      label: "Total Notes",
-      value: "15,432",
-      change: "+24%",
+      label: "Total Tests",
+      value: totalTestsValue,
+      change: "Completed",
       changeType: "positive",
       icon: (
         <svg
@@ -70,9 +93,9 @@ export default function AdminDashboardPage() {
       ),
     },
     {
-      label: "AI Queries",
-      value: "45,821",
-      change: "+18%",
+      label: "Total Questions",
+      value: totalQuestionsValue,
+      change: "Bank",
       changeType: "positive",
       icon: (
         <svg
@@ -124,29 +147,33 @@ export default function AdminDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                {stat.icon}
+        {loading ? (
+          <div className="col-span-full py-8 text-center text-gray-500">Loading platform statistics...</div>
+        ) : (
+          stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                  {stat.icon}
+                </div>
+                <span
+                  className={`text-xs font-medium ${
+                    stat.changeType === "positive"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {stat.change}
+                </span>
               </div>
-              <span
-                className={`text-xs font-medium ${
-                  stat.changeType === "positive"
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {stat.change}
-              </span>
+              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-sm text-gray-600">{stat.label}</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-sm text-gray-600">{stat.label}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

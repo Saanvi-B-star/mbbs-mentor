@@ -7,7 +7,7 @@ import { ValidationException } from '@/shared/exceptions';
  * Creates middleware that validates request data against a Zod schema
  */
 export const validate = (schema: ZodSchema) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       await schema.parseAsync({
         body: req.body,
@@ -33,7 +33,7 @@ export const validate = (schema: ZodSchema) => {
  * Validate Request Body
  */
 export const validateBody = (schema: ZodSchema) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();
@@ -55,7 +55,7 @@ export const validateBody = (schema: ZodSchema) => {
  * Validate Query Parameters
  */
 export const validateQuery = (schema: ZodSchema) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       req.query = await schema.parseAsync(req.query);
       next();
@@ -77,7 +77,7 @@ export const validateQuery = (schema: ZodSchema) => {
  * Validate URL Parameters
  */
 export const validateParams = (schema: ZodSchema) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       req.params = await schema.parseAsync(req.params);
       next();

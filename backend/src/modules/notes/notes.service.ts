@@ -1,5 +1,5 @@
 import { prisma } from '@/config';
-import { uploadToS3, countWords } from '@/shared/utils';
+import { uploadToS3 } from '@/shared/utils';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@/shared/exceptions';
 import { NoteProcStatus } from '@prisma/client';
 import {
@@ -12,6 +12,9 @@ import {
   NoteStatisticsDto
 } from './notes.types';
 import { queueNoteProcessing } from '@/config/queue.config';
+import { tokenService } from '../token/token.service';
+import { logger } from '@/config';
+import { llmService } from '@/modules/llm/llm.service';
 
 /**
  * Notes Service
@@ -51,6 +54,38 @@ export class NotesService {
 
     // Add to processing queue
     await queueNoteProcessing(note.id);
+
+    // Deduct tokens (10 tokens per note processing)
+    try {
+      await tokenService.deductTokens({
+        userId,
+        amount: 10,
+        feature: 'note_processing',
+        referenceId: note.id,
+        description: `Note Processing: ${note.title}`,
+      });
+    } catch (err) {
+      logger.error(`Failed to deduct tokens for note ${note.id}:`, err);
+    }
+
+    // Record initial study session for processing/organizing (5 minutes)
+    try {
+      await prisma.studySession.create({
+        data: {
+          userId,
+          startTime: new Date(),
+          endTime: new Date(),
+          duration: 300, // 5 minutes in seconds
+          activities: {
+            type: 'NOTE_UPLOAD',
+            noteId: note.id,
+            title: note.title,
+          },
+        },
+      });
+    } catch (err) {
+      logger.error(`Failed to record study session for note upload:`, err);
+    }
 
     return this.mapNoteToDto(note);
   }
@@ -158,8 +193,17 @@ export class NotesService {
       throw new ForbiddenException('You do not have access to this note');
     }
 
-    // TODO: Delete file from S3
-    // await deleteFromS3(note.fileUrl);
+    // Delete file from S3
+    if (note.fileUrl && !note.fileUrl.includes('localhost')) {
+      const { deleteFromS3, extractS3Key } = require('@/shared/utils');
+      try {
+        const key = extractS3Key(note.fileUrl);
+        await deleteFromS3(key);
+      } catch (err) {
+        logger.error(`Failed to delete S3 object for note ${note.id}:`, err);
+      }
+    }
+
 
     await prisma.userNote.delete({
       where: { id: noteId },
@@ -184,14 +228,39 @@ export class NotesService {
       throw new ForbiddenException('No text content available');
     }
 
-    // TODO: Integrate with AI service to generate flashcards
-    // For now, return mock data
-    return [
-      {
-        front: 'Sample Question from your notes',
-        back: 'Sample Answer',
-      },
-    ];
+    // Integrate with AI service to generate high-yield flashcards
+    const prompt = `Based on the following medical notes, generate ${count} high-yield flashcards for medical students. 
+Format each flashcard as a JSON object with "front" (question/concept) and "back" (answer/explanation). 
+Ensure the content is accurate and focused on exam-relevant details.
+
+Notes Content:
+${note.extractedText.substring(0, 5000)}
+
+Return ONLY a JSON array of objects.`;
+
+    const completion = await llmService.chat({
+      question: prompt,
+      userId: userId,
+    });
+
+    try {
+      // Extract JSON array from LLM response (handling potential markdown blocks)
+      const jsonString = completion.answer.includes('```json') 
+        ? completion.answer.split('```json')[1].split('```')[0].trim()
+        : completion.answer.trim();
+      
+      const flashcards = JSON.parse(jsonString);
+      return Array.isArray(flashcards) ? flashcards : [];
+    } catch (err) {
+      logger.error('Failed to parse AI-generated flashcards:', err);
+      return [
+        {
+          front: 'Error generated flashcards',
+          back: 'There was an issue processing the AI response. Please try again.',
+        },
+      ];
+    }
+
   }
 
   /**
@@ -605,6 +674,7 @@ export class NotesService {
       fileSize: note.fileSize,
       processingStatus: note.processingStatus,
       extractedText: note.extractedText,
+      content: note.extractedText, // For frontend compatibility
       formattedNotes: note.formattedNotes,
       summary: note.summary,
       pageCount: note.pageCount,

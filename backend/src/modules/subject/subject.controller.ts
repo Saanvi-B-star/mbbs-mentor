@@ -40,7 +40,7 @@ export class SubjectController {
    */
   async getSubjectById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await subjectService.getSubjectById(id);
 
@@ -79,7 +79,7 @@ export class SubjectController {
    */
   async updateSubject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const data: UpdateSubjectDto = req.body;
 
       const result = await subjectService.updateSubject(id, data);
@@ -100,7 +100,7 @@ export class SubjectController {
    */
   async deleteSubject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await subjectService.deleteSubject(id);
 
@@ -119,7 +119,7 @@ export class SubjectController {
    */
   async getSubjectTopics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await subjectService.getSubjectWithTopics(id);
 
@@ -138,7 +138,7 @@ export class SubjectController {
    */
   async getSubjectStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await subjectService.getSubjectStats(id);
 

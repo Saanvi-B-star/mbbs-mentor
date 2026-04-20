@@ -7,6 +7,7 @@ import {
 } from './test.types';
 import { questionRepository } from '../question/question.repository';
 import { Decimal } from '@prisma/client/runtime/library';
+import { BadRequestException } from '@/shared/exceptions';
 
 /**
  * Test Repository
@@ -40,24 +41,24 @@ export class TestRepository {
       include: {
         testQuestions: includeQuestions
           ? {
-              orderBy: { order: 'asc' },
-              include: {
-                question: {
-                  include: {
-                    options: {
-                      orderBy: { sortOrder: 'asc' },
-                    },
-                    topic: {
-                      select: {
-                        id: true,
-                        name: true,
-                        subjectId: true,
-                      },
+            orderBy: { order: 'asc' },
+            include: {
+              question: {
+                include: {
+                  options: {
+                    orderBy: { sortOrder: 'asc' },
+                  },
+                  topic: {
+                    select: {
+                      id: true,
+                      name: true,
+                      subjectId: true,
                     },
                   },
                 },
               },
-            }
+            },
+          }
           : false,
       },
     });
@@ -117,6 +118,14 @@ export class TestRepository {
    * Generate test with questions
    */
   async generateTest(userId: string, criteria: GenerateTestCriteria, tokenCost?: number) {
+    // Validate totalQuestions is a positive number
+    if (!criteria.totalQuestions || criteria.totalQuestions <= 0) {
+      throw new BadRequestException(
+        'Total questions must be a positive number',
+        'INVALID_QUESTION_COUNT'
+      );
+    }
+
     // Fetch random questions based on criteria
     const questions = await questionRepository.findRandom({
       topicIds: criteria.topicIds,
@@ -127,7 +136,10 @@ export class TestRepository {
     });
 
     if (questions.length === 0) {
-      throw new Error('No questions found matching the criteria');
+      throw new BadRequestException(
+        'No questions found matching the criteria. Try adjusting filters or select different difficulty/subject.',
+        'NO_QUESTIONS_FOUND'
+      );
     }
 
     // Create test with questions in a transaction
@@ -256,16 +268,16 @@ export class TestRepository {
         },
         testAnswers: includeAnswers
           ? {
-              include: {
-                question: {
-                  include: {
-                    options: true,
-                    topic: true,
-                  },
+            include: {
+              question: {
+                include: {
+                  options: true,
+                  topic: true,
                 },
-                selectedOption: true,
               },
-            }
+              selectedOption: true,
+            },
+          }
           : false,
       },
     });
@@ -354,47 +366,57 @@ export class TestRepository {
       let totalScore = 0;
       const maxScore = attempt.test.testQuestions.length;
 
-      // Evaluate each answer
-      for (const answer of attempt.testAnswers) {
-        const testQuestion = attempt.test.testQuestions.find(
-          (tq) => tq.questionId === answer.questionId
+      // Evaluate each question in the test
+      for (const testQuestion of attempt.test.testQuestions) {
+        const answer = attempt.testAnswers.find(
+          (a) => a.questionId === testQuestion.questionId
         );
-
-        if (!testQuestion) continue;
 
         let isCorrect = false;
         let marksObtained = 0;
 
-        // For MCQ and TRUE_FALSE questions
-        if (answer.selectedOptionId) {
-          const selectedOption = testQuestion.question.options.find(
-            (opt) => opt.id === answer.selectedOptionId
-          );
+        if (answer) {
+          // Evaluation logic depends on question type
+          const qType = testQuestion.question.questionType;
 
-          if (selectedOption && selectedOption.isCorrect) {
-            isCorrect = true;
-            marksObtained = Number(testQuestion.marks);
-            totalScore += marksObtained;
+          if (qType === 'MCQ' || qType === 'TRUE_FALSE') {
+            if (answer.selectedOptionId) {
+              const selectedOption = testQuestion.question.options.find(
+                (opt) => opt.id === answer.selectedOptionId
+              );
+
+              if (selectedOption && selectedOption.isCorrect) {
+                isCorrect = true;
+                marksObtained = Number(testQuestion.marks);
+                totalScore += marksObtained;
+              }
+            }
+          } else if (qType === 'SAQ') {
+            // For now, SAQ requires manual review or exact match
+            // We'll mark as incorrect by default if no auto-grading is set up
+            // but we at least record that it was answered if answerText exists
+            isCorrect = false; 
+            marksObtained = 0;
           }
+
+          // Update answer with evaluation
+          await tx.testAnswer.update({
+            where: { id: answer.id },
+            data: {
+              isCorrect,
+              marksObtained: new Decimal(marksObtained),
+            },
+          });
+
+          // Update question statistics
+          await tx.question.update({
+            where: { id: answer.questionId },
+            data: {
+              totalAttempts: { increment: 1 },
+              correctAttempts: isCorrect ? { increment: 1 } : undefined,
+            },
+          });
         }
-
-        // Update answer with evaluation
-        await tx.testAnswer.update({
-          where: { id: answer.id },
-          data: {
-            isCorrect,
-            marksObtained: new Decimal(marksObtained),
-          },
-        });
-
-        // Update question statistics
-        await tx.question.update({
-          where: { id: answer.questionId },
-          data: {
-            totalAttempts: { increment: 1 },
-            correctAttempts: isCorrect ? { increment: 1 } : undefined,
-          },
-        });
       }
 
       // Calculate percentage

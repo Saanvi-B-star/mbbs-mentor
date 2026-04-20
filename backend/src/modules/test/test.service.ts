@@ -1,3 +1,4 @@
+import { prisma } from '@/config';
 import { testRepository } from './test.repository';
 import { tokenService } from '../token/token.service';
 import {
@@ -30,24 +31,7 @@ export class TestService {
     userId: string,
     criteria: GenerateTestCriteria
   ): Promise<TestResponseDto> {
-    // Check token balance
-    const balance = await tokenService.getBalance(userId);
-    if (balance.currentBalance < this.TEST_GENERATION_COST) {
-      throw new BadRequestException(
-        `Insufficient tokens. Required: ${this.TEST_GENERATION_COST}, Current: ${balance.currentBalance}`,
-        ERROR_CODES.TOKEN_INSUFFICIENT_BALANCE
-      );
-    }
-
-    // Validate criteria
-    if (!criteria.topicIds?.length && !criteria.subjectIds?.length) {
-      throw new BadRequestException(
-        'Either topicIds or subjectIds must be provided',
-        ERROR_CODES.VALIDATION_ERROR
-      );
-    }
-
-    // Generate test with questions
+    // Generate test with questions first (to check if any exist)
     const test = await testRepository.generateTest(
       userId,
       criteria,
@@ -61,14 +45,18 @@ export class TestService {
       );
     }
 
-    // Deduct tokens
-    await tokenService.deductTokens({
-      userId,
-      amount: this.TEST_GENERATION_COST,
-      feature: 'test_generation',
-      referenceId: test.id,
-      description: `Generated test: ${test.title || 'Untitled'}`,
-    });
+    // Only deduct tokens after successfully generating the test
+    try {
+      await tokenService.deductTokens({
+        userId,
+        amount: this.TEST_GENERATION_COST,
+        feature: 'test_generation',
+        referenceId: test.id,
+        description: `Generated test: ${test.title || 'Untitled'}`,
+      });
+    } catch {
+      // Token deduction is best-effort - don't fail the test generation
+    }
 
     return this.mapToTestResponseDto(test);
   }
@@ -182,6 +170,54 @@ export class TestService {
 
     // Submit test and calculate scores
     const result = await testRepository.submitTest(attemptId);
+
+    // Reward tokens based on accuracy
+    const accuracy = result.percentage ? Number(result.percentage) : 0;
+    let rewardAmount = 0;
+    let rewardReason = '';
+
+    if (accuracy >= 80) {
+      rewardAmount = 5;
+      rewardReason = 'Excellent score bonus (>= 80%)';
+    } else if (accuracy >= 50) {
+      rewardAmount = 2;
+      rewardReason = 'Good score bonus (>= 50%)';
+    }
+
+    if (rewardAmount > 0) {
+      try {
+        await tokenService.addTokens({
+          userId,
+          amount: rewardAmount,
+          transactionType: 'BONUS',
+          referenceId: attemptId,
+          description: `Test Reward: ${rewardReason} on ${result.test?.title || 'test'}`,
+        });
+      } catch (err) {
+        // Silently fail as rewarding is bonus
+      }
+    }
+
+    // Record study session (convert minutes to seconds for duration)
+    try {
+      const durationSeconds = (result.timeTaken || 1) * 60;
+      await prisma.studySession.create({
+        data: {
+          userId,
+          startTime: result.startTime,
+          endTime: result.endTime || new Date(),
+          duration: durationSeconds,
+          activities: {
+            type: 'TEST_COMPLETION',
+            testId: result.testId,
+            attemptId: result.id,
+            score: result.percentage ? Number(result.percentage) : 0,
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Failed to record study session for test:', err);
+    }
 
     return this.mapToTestResultDto(result);
   }

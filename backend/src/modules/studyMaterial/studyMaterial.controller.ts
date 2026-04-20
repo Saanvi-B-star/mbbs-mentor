@@ -23,7 +23,7 @@ export class StudyMaterialController {
         }
         const material = await this.service.getById(id);
 
-        res.json({
+        return res.json({
             success: true,
             data: material,
         });

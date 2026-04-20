@@ -1,15 +1,25 @@
-import { prisma } from '@/config';
+import { prisma, logger } from '@/config';
+import axios from 'axios';
+import {
+  S3Client,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { textractClient } from '@/config/aws.config';
 import {
   DetectDocumentTextCommand,
   AnalyzeDocumentCommand,
 } from '@aws-sdk/client-textract';
-import { NoteProcStatus } from '@prisma/client';
-import { logger } from '@/config';
+import { NoteProcStatus, UserNote } from '@prisma/client';
+// Duplicate import removed
 import { countWords } from '@/shared/utils';
+import { chunkText } from '@/shared/utils/text.utils';
+import { llmService } from '@/modules/llm/llm.service';
+import { vectorService } from '@/modules/llm/vector/vector.service';
 import Tesseract from 'tesseract.js';
 import pdfParse from 'pdf-parse';
-import axios from 'axios';
+const parsePdf = pdfParse as any;
+import * as path from 'path';
+import * as fs from 'fs';
 
 /**
  * Notes Processor
@@ -44,24 +54,40 @@ export class NotesProcessor {
       let extractedText: string;
       let pageCount: number | undefined;
 
-      if (note.fileType === 'pdf') {
-        const result = await this.extractTextFromPDF(note.fileUrl);
+      const urlLower = note.fileUrl.toLowerCase();
+      const isPdf = urlLower.endsWith('.pdf') || note.fileType === 'pdf' || note.fileType === 'application/pdf';
+      const isImage = urlLower.match(/\.(jpg|jpeg|png|webp)$/i) || note.fileType.startsWith('image/');
+
+      if (isPdf && !urlLower.endsWith('.txt')) { // Special case for the broken test note
+        const result = await this.extractTextFromPDF(note);
         extractedText = result.text;
         pageCount = result.pageCount;
-      } else {
+      } else if (isImage) {
         // Image file
-        extractedText = await this.extractTextFromImage(note.fileUrl);
+        extractedText = await this.extractTextFromImage(note);
+        pageCount = 1;
+      } else {
+        // Plain text or other types - assume text
+        logger.info(`Processing as plain text: ${noteId}`);
+        const buffer = await this.downloadFile(note.fileUrl);
+        extractedText = buffer.toString('utf-8');
         pageCount = 1;
       }
 
       // Count words
       const wordCount = countWords(extractedText);
 
-      // Format notes using AI (TODO: integrate with AI service)
+      // 1. Format notes using AI
+      logger.info(`Formatting note ${noteId} with AI...`);
       const formattedNotes = await this.formatNotesWithAI(extractedText);
 
-      // Generate summary (TODO: integrate with AI service)
-      const summary = await this.generateSummary(extractedText);
+      // 2. Generate summary using AI
+      logger.info(`Generating summary for note ${noteId}...`);
+      const summary = await this.generateSummary(formattedNotes);
+
+      // 3. Index to Vector Store (Pinecone) for RAG
+      // Using formatted notes for better indexing quality
+      await this.indexNoteToVectorStore(note, formattedNotes);
 
       const processingTime = Math.floor((Date.now() - startTime) / 1000);
 
@@ -99,25 +125,21 @@ export class NotesProcessor {
   /**
    * Extract text from PDF using pdf-parse
    */
-  private async extractTextFromPDF(fileUrl: string): Promise<{ text: string; pageCount: number }> {
+  private async extractTextFromPDF(note: UserNote): Promise<{ text: string; pageCount: number }> {
     try {
       // Download PDF file
-      const response = await axios.get(fileUrl, {
-        responseType: 'arraybuffer',
-      });
-
-      const buffer = Buffer.from(response.data);
+      const buffer = await this.downloadFile(note.fileUrl);
 
       // Parse PDF
-      const data = await pdfParse(buffer);
+      const data = await parsePdf(buffer);
 
       return {
         text: data.text,
         pageCount: data.numpages,
       };
     } catch (error) {
-      logger.error('PDF parsing failed, trying AWS Textract...');
-      return await this.extractTextFromPDFWithTextract(fileUrl);
+      logger.error('PDF parsing failed, trying AWS Textract...', error);
+      return await this.extractTextFromPDFWithTextract(note);
     }
   }
 
@@ -125,15 +147,13 @@ export class NotesProcessor {
    * Extract text from PDF using AWS Textract (fallback)
    */
   private async extractTextFromPDFWithTextract(
-    fileUrl: string
+    note: UserNote
   ): Promise<{ text: string; pageCount: number }> {
     try {
-      // Download file
-      const response = await axios.get(fileUrl, {
-        responseType: 'arraybuffer',
-      });
+      if (!textractClient) throw new Error("AWS Textract is not configured");
 
-      const buffer = Buffer.from(response.data);
+      // Download file
+      const buffer = await this.downloadFile(note.fileUrl);
 
       // Use AWS Textract
       const command = new DetectDocumentTextCommand({
@@ -149,44 +169,47 @@ export class NotesProcessor {
         .map((block) => block.Text)
         .join('\n') || '';
 
-      // Estimate page count (Textract doesn't return page count directly)
+      // Estimate page count
       const pageCount = Math.ceil((result.Blocks?.length || 0) / 50);
 
       return { text, pageCount };
     } catch (error) {
       logger.error('AWS Textract failed:', error);
-      throw new Error('Failed to extract text from PDF');
+      throw new Error('Failed to extract text from PDF. Please check if your AWS account has Textract subscription enabled.');
     }
   }
 
   /**
    * Extract text from image using Tesseract.js
    */
-  private async extractTextFromImage(fileUrl: string): Promise<string> {
+  private async extractTextFromImage(note: UserNote): Promise<string> {
     try {
-      // Use Tesseract.js for OCR
-      const result = await Tesseract.recognize(fileUrl, 'eng', {
+      // For images, we can still use the URL if it's accessible or download it
+      // Tesseract.js can work with buffers too
+      const buffer = await this.downloadFile(note.fileUrl);
+
+      const result = await Tesseract.recognize(buffer, 'eng', {
         logger: (m) => logger.debug(`Tesseract: ${m.status}`),
       });
 
       return result.data.text;
     } catch (error) {
       logger.error('Tesseract OCR failed, trying AWS Textract...');
-      return await this.extractTextFromImageWithTextract(fileUrl);
+      return await this.extractTextFromImageWithTextract(note);
     }
   }
 
   /**
    * Extract text from image using AWS Textract (fallback)
    */
-  private async extractTextFromImageWithTextract(fileUrl: string): Promise<string> {
+  private async extractTextFromImageWithTextract(note: UserNote): Promise<string> {
     try {
-      // Download image
-      const response = await axios.get(fileUrl, {
-        responseType: 'arraybuffer',
-      });
+      if (!textractClient) {
+        throw new Error("AWS Textract is not configured. OCR requires AWS textract when Tesseract fails.");
+      }
 
-      const buffer = Buffer.from(response.data);
+      // Download file
+      const buffer = await this.downloadFile(note.fileUrl);
 
       // Use AWS Textract
       const command = new DetectDocumentTextCommand({
@@ -210,85 +233,136 @@ export class NotesProcessor {
   }
 
   /**
+   * Download file from S3 or local storage
+   */
+  private async downloadFile(fileUrl: string): Promise<Buffer> {
+    try {
+      if (fileUrl.startsWith('http://localhost') || fileUrl.includes('127.0.0.1')) {
+        // Local file
+        logger.info(`Downloading file locally: ${fileUrl}`);
+        const url = new URL(fileUrl);
+        // Correctly identify the relative path within the public directory
+        const relativePath = url.pathname.substring(1); 
+        const absolutePath = path.join(process.cwd(), 'public', relativePath);
+        
+        if (!fs.existsSync(absolutePath)) {
+          throw new Error(`Local file not found: ${absolutePath}`);
+        }
+        
+        return fs.readFileSync(absolutePath);
+      }
+      
+      // S3 File
+      logger.info(`Downloading file from S3: ${fileUrl}`);
+      const url = new URL(fileUrl);
+      const bucketName = url.hostname.split('.')[0];
+      const key = decodeURIComponent(url.pathname.substring(1));
+
+      const { s3Client } = await import('@/config/aws.config');
+      if (!s3Client) throw new Error("S3 Client not initialized");
+
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      const response = await s3Client.send(command);
+      const byteArray = await response.Body?.transformToByteArray();
+      
+      if (!byteArray) throw new Error("Empty response body from S3");
+      
+      return Buffer.from(byteArray);
+    } catch (error) {
+      logger.error('Failed to download file:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Format extracted text into structured notes using AI
-   * TODO: Integrate with AI service
    */
   private async formatNotesWithAI(text: string): Promise<string> {
-    // For now, return basic formatting
-    // TODO: Call AI service to convert to markdown with proper headings, bullets, etc.
-
-    // Basic formatting
-    const lines = text.split('\n');
-    const formatted = lines
-      .map((line) => {
-        line = line.trim();
-        if (!line) return '';
-
-        // Detect headings (all caps or numbers)
-        if (line.toUpperCase() === line && line.length > 3 && line.length < 100) {
-          return `## ${line}\n`;
-        }
-
-        // Detect bullet points
-        if (line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
+    try {
+      return await llmService.formatNotes(text);
+    } catch (error) {
+      logger.error('AI formatting failed, falling back to basic formatting:', error);
+      
+      // Basic formatting fallback
+      const lines = text.split('\n');
+      return lines
+        .map((line) => {
+          line = line.trim();
+          if (!line) return '';
+          if (line.toUpperCase() === line && line.length > 3 && line.length < 100) {
+            return `## ${line}\n`;
+          }
+          if (line.startsWith('-') || line.startsWith('•') || /^\d+\./.test(line)) {
+            return `${line}\n`;
+          }
           return `${line}\n`;
-        }
-
-        return `${line}\n`;
-      })
-      .join('');
-
-    return formatted;
+        })
+        .join('');
+    }
   }
 
   /**
    * Generate summary of text using AI
-   * TODO: Integrate with AI service
    */
   private async generateSummary(text: string): Promise<string> {
-    // For now, return first 500 characters
-    // TODO: Call AI service to generate intelligent summary
-
-    if (text.length <= 500) {
-      return text;
+    try {
+      return await llmService.summarize(text);
+    } catch (error) {
+      logger.error('AI summarization failed, falling back to truncation:', error);
+      
+      if (text.length <= 500) return text;
+      const sentences = text.split(/[.!?]+/);
+      let summary = '';
+      for (const sentence of sentences) {
+        if (summary.length + sentence.length > 500) break;
+        summary += sentence + '. ';
+      }
+      return summary.trim();
     }
+  }
 
-    // Extract first few sentences
-    const sentences = text.split(/[.!?]+/);
-    let summary = '';
-    for (const sentence of sentences) {
-      if (summary.length + sentence.length > 500) break;
-      summary += sentence + '. ';
+  /**
+   * Index note content into Pinecone for RAG
+   */
+  private async indexNoteToVectorStore(note: UserNote, text: string): Promise<void> {
+    try {
+      logger.info(`Indexing note ${note.id} to vector store...`);
+
+      // Chunk text for embedding
+      const chunks = await chunkText(text, 1000, 200);
+
+      // Prepare metadata for each chunk
+      const vectorItems = chunks.map((chunk, index) => ({
+        id: `note-${note.id}-chunk-${index}`,
+        text: chunk,
+        metadata: {
+          noteId: note.id,
+          userId: note.userId,
+          title: note.title,
+          tags: note.tags.join(', '),
+          contentType: 'user_note',
+          source: 'note_upload',
+        },
+      }));
+
+      // Upsert batch to Pinecone
+      await vectorService.upsertBatch(vectorItems);
+
+      logger.info(`Successfully indexed note ${note.id} with ${chunks.length} chunks`);
+    } catch (error) {
+      logger.error(`Failed to index note ${note.id} to Pinecone:`, error);
+      // We don't rethrow here to allow the main processing to complete even if indexing fails
     }
-
-    return summary.trim();
   }
 
   /**
    * Analyze document structure using AWS Textract
    */
-  private async analyzeDocumentStructure(fileUrl: string): Promise<any> {
-    try {
-      const response = await axios.get(fileUrl, {
-        responseType: 'arraybuffer',
-      });
-
-      const buffer = Buffer.from(response.data);
-
-      const command = new AnalyzeDocumentCommand({
-        Document: {
-          Bytes: buffer,
-        },
-        FeatureTypes: ['TABLES', 'FORMS'],
-      });
-
-      const result = await textractClient.send(command);
-      return result;
-    } catch (error) {
-      logger.error('Document structure analysis failed:', error);
-      return null;
-    }
-  }
+  // analyzeDocumentStructure removed as it was unused and had missing dependencies
 }
 
 export const notesProcessor = new NotesProcessor();

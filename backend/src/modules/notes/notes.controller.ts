@@ -13,9 +13,9 @@ export class NotesController {
    */
   async uploadNote(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const file = req.file;
-      const { title, tags }: UploadNoteDto = req.body;
+      const { title, tags: rawTags }: UploadNoteDto = req.body;
 
       if (!file) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -25,7 +25,17 @@ export class NotesController {
         return;
       }
 
-      const result = await notesService.uploadNote(userId, file, title, tags);
+      // Parse tags: multipart/form-data sends a comma-separated string, DB expects String[]
+      let tagsArray: string[] = [];
+      if (rawTags) {
+        if (Array.isArray(rawTags)) {
+          tagsArray = rawTags.flatMap((t: string) => t.split(',').map((s: string) => s.trim())).filter(Boolean);
+        } else {
+          tagsArray = (rawTags as string).split(',').map((t: string) => t.trim()).filter(Boolean);
+        }
+      }
+
+      const result = await notesService.uploadNote(userId, file, title, tagsArray);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -43,7 +53,7 @@ export class NotesController {
    */
   async getUserNotes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const status = req.query.status as any;
@@ -65,7 +75,7 @@ export class NotesController {
    */
   async getNoteById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { id } = req.params as { id: string };
 
       const result = await notesService.getNoteById(id, userId);
@@ -85,7 +95,7 @@ export class NotesController {
    */
   async updateNote(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { id } = req.params as { id: string };
       const data: UpdateNoteDto = req.body;
 
@@ -107,7 +117,7 @@ export class NotesController {
    */
   async deleteNote(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { id } = req.params as { id: string };
 
       await notesService.deleteNote(id, userId);
@@ -127,7 +137,7 @@ export class NotesController {
    */
   async generateFlashcards(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { id } = req.params as { id: string };
       const { count }: GenerateFlashcardsDto = req.body;
 
@@ -148,7 +158,7 @@ export class NotesController {
    */
   async searchNotes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const query = {
         searchTerm: req.query.searchTerm as string,
         tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
@@ -177,7 +187,7 @@ export class NotesController {
    */
   async extractByTags(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { tags, page = 1, limit = 10 } = req.body;
 
       const result = await notesService.extractByTags(userId, { tags, page, limit });
@@ -198,7 +208,7 @@ export class NotesController {
    */
   async extractByDateRange(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { startDate, endDate, page = 1, limit = 10 } = req.body;
 
       const result = await notesService.extractByDateRange(userId, { startDate, endDate, page, limit });
@@ -219,7 +229,7 @@ export class NotesController {
    */
   async extractByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { status } = req.params;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -242,7 +252,7 @@ export class NotesController {
    */
   async getProcessedNotes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
@@ -264,7 +274,7 @@ export class NotesController {
    */
   async getNoteStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await notesService.getNoteStatistics(userId);
 
@@ -284,7 +294,7 @@ export class NotesController {
    */
   async exportNotes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const format = (req.query.format as 'json' | 'csv') || 'json';
       const filters = {
         status: req.query.status as any,
@@ -317,7 +327,7 @@ export class NotesController {
    */
   async extractByTopic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { topicId } = req.params as { topicId: string };
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -340,7 +350,7 @@ export class NotesController {
    */
   async extractBySubject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { subjectId } = req.params as { subjectId: string };
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -363,7 +373,7 @@ export class NotesController {
    */
   async getNotesBySubjectTree(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { subjectId } = req.params as { subjectId: string };
 
       const result = await notesService.getNotesBySubjectTree(userId, subjectId);
@@ -384,7 +394,7 @@ export class NotesController {
    */
   async getNotesBySubjectsTree(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await notesService.getNotesBySubjectsTree(userId);
 

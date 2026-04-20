@@ -67,7 +67,7 @@ export interface TestAttemptResponseDto {
   totalScore?: number | null;
   maxScore?: number | null;
   percentage?: number | null;
-  status: string;
+  status: AttemptStatus;
   test?: any;
   answers?: TestAnswerDto[];
 }

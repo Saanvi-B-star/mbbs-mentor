@@ -11,7 +11,7 @@ import { logger } from './logger';
 export const s3Client = config.aws.s3.enabled && config.aws.credentials.accessKeyId
   ? new S3Client({
       region: config.aws.s3.region,
-      credentials: config.aws.credentials,
+      credentials: config.aws.credentials as any,
     })
   : null;
 
@@ -22,7 +22,7 @@ export const s3Client = config.aws.s3.enabled && config.aws.credentials.accessKe
 export const sesClient = config.aws.ses.enabled && config.aws.credentials.accessKeyId
   ? new SESClient({
       region: config.aws.ses.region,
-      credentials: config.aws.credentials,
+      credentials: config.aws.credentials as any,
     })
   : null;
 
@@ -33,7 +33,7 @@ export const sesClient = config.aws.ses.enabled && config.aws.credentials.access
 export const textractClient = config.aws.textract.enabled && config.aws.credentials.accessKeyId
   ? new TextractClient({
       region: config.aws.textract.region,
-      credentials: config.aws.credentials,
+      credentials: config.aws.credentials as any,
     })
   : null;
 
@@ -65,9 +65,15 @@ export const awsConfig = {
 // Log AWS service status
 if (config.aws.enabled) {
   logger.info('AWS services initialized:');
-  if (config.aws.s3.enabled) logger.info('  - S3 enabled');
+  if (config.aws.s3.enabled) {
+    if (s3Client) {
+      logger.info(`  - S3 enabled (Bucket: ${config.aws.s3.bucketName}, Region: ${config.aws.s3.region})`);
+    } else {
+      logger.warn('  - S3 configuration present but client failed to initialize');
+    }
+  }
   if (config.aws.ses.enabled) logger.info('  - SES enabled');
   if (config.aws.textract.enabled) logger.info('  - Textract enabled');
 } else {
-  logger.warn('AWS services not configured - File uploads, email, and OCR will be disabled');
+  logger.warn('AWS services not configured - File uploads, email, and OCR will be falling back to local/disabled');
 }

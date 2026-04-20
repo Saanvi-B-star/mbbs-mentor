@@ -12,7 +12,6 @@ import {
 import {
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from '@/shared/exceptions';
 import { ERROR_CODES } from '@/shared/constants';
 import { QuestionType } from '@prisma/client';
@@ -183,9 +182,10 @@ export class QuestionService {
     let imported = 0;
 
     for (let i = 0; i < data.questions.length; i++) {
-      try {
-        const questionData = data.questions[i];
+      const questionData = data.questions[i];
+      if (!questionData) continue;
 
+      try {
         // Validate options
         this.validateQuestionOptions(questionData);
 
@@ -199,7 +199,7 @@ export class QuestionService {
       } catch (error: any) {
         errors.push({
           index: i,
-          question: data.questions[i].questionText.substring(0, 50),
+          question: questionData.questionText.substring(0, 50),
           error: error.message,
         });
       }

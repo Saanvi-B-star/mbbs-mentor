@@ -12,7 +12,7 @@ export class StudentGoalsController {
    */
   async createStudentGoals(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: CreateStudentGoalsDto = req.body;
 
       const studentGoals = await studentGoalsService.createStudentGoals(userId, data);
@@ -33,7 +33,7 @@ export class StudentGoalsController {
    */
   async getStudentGoals(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const studentGoals = await studentGoalsService.getStudentGoals(userId);
 
@@ -52,7 +52,7 @@ export class StudentGoalsController {
    */
   async updateStudentGoals(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: UpdateStudentGoalsDto = req.body;
 
       const studentGoals = await studentGoalsService.updateStudentGoals(userId, data);
@@ -73,7 +73,7 @@ export class StudentGoalsController {
    */
   async deleteStudentGoals(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       await studentGoalsService.deleteStudentGoals(userId);
 
@@ -90,7 +90,7 @@ export class StudentGoalsController {
    * Get all available goal options
    * GET /api/v1/student-goals/available
    */
-  async getAvailableGoals(req: Request, res: Response, next: NextFunction) {
+  async getAvailableGoals(_req: Request, res: Response, next: NextFunction) {
     try {
       const availableGoals = studentGoalsService.getAvailableGoals();
 
@@ -109,7 +109,7 @@ export class StudentGoalsController {
    */
   async addGoal(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { goalType } = req.body;
 
       const studentGoals = await studentGoalsService.addGoal(userId, goalType as GoalType);
@@ -130,7 +130,7 @@ export class StudentGoalsController {
    */
   async removeGoal(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { goalType } = req.body;
 
       const studentGoals = await studentGoalsService.removeGoal(userId, goalType as GoalType);
@@ -151,7 +151,7 @@ export class StudentGoalsController {
    */
   async checkGoal(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const { goalType } = req.params;
 
       const hasGoal = await studentGoalsService.hasGoal(userId, goalType as GoalType);

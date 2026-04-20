@@ -83,7 +83,7 @@ class LLMController {
   async chat(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { question } = req.body as ChatRequest;
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
 
       if (!question || typeof question !== 'string' || question.trim().length === 0) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -156,7 +156,7 @@ class LLMController {
    */
   async getHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
 
       if (!userId) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -198,7 +198,7 @@ class LLMController {
    */
   async clearHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
 
       if (!userId) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({

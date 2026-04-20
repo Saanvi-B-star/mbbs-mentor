@@ -1,3 +1,4 @@
+import { prisma } from '@/config';
 import { analyticsRepository } from './analytics.repository';
 import { NotFoundException } from '@/shared/exceptions';
 import { ERROR_CODES } from '@/shared/constants';
@@ -64,19 +65,21 @@ export class AnalyticsService {
     }
 
     // Calculate overall statistics
-    const totalQuestions = attempt.responses.length;
-    const correctAnswers = attempt.responses.filter((r) => r.isCorrect).length;
-    const incorrectAnswers = attempt.responses.filter(
-      (r) => !r.isCorrect && r.selectedOption !== null
+    const totalQuestions = attempt.testAnswers.length;
+    const correctAnswers = attempt.testAnswers.filter((r) => r.isCorrect).length;
+    const incorrectAnswers = attempt.testAnswers.filter(
+      (r) => !r.isCorrect && r.selectedOptionId !== null
     ).length;
-    const unansweredQuestions = attempt.responses.filter((r) => r.selectedOption === null).length;
+    const unansweredQuestions = attempt.testAnswers.filter((r) => r.selectedOptionId === null).length;
     const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
-    const avgTimePerQuestion = totalQuestions > 0 ? attempt.timeTaken / totalQuestions : 0;
+    const avgTimePerQuestion = totalQuestions > 0 ? (attempt.timeTaken || 0) / totalQuestions : 0;
 
     // Subject-wise analysis
     const subjectMap = new Map<string, any>();
-    attempt.responses.forEach((response) => {
-      const subject = response.question.topic.subject;
+    attempt.testAnswers.forEach((response) => {
+      const topic = response.question.topic;
+      if (!topic) return;
+      const subject = topic.subject;
       const subjectId = subject.id;
 
       if (!subjectMap.has(subjectId)) {
@@ -102,8 +105,9 @@ export class AnalyticsService {
 
     // Topic-wise analysis
     const topicMap = new Map<string, any>();
-    attempt.responses.forEach((response) => {
+    attempt.testAnswers.forEach((response) => {
       const topic = response.question.topic;
+      if (!topic) return;
       const topicId = topic.id;
 
       if (!topicMap.has(topicId)) {
@@ -129,8 +133,8 @@ export class AnalyticsService {
 
     // Difficulty-wise analysis
     const difficultyMap = new Map<string, any>();
-    attempt.responses.forEach((response) => {
-      const difficulty = response.question.difficulty;
+    attempt.testAnswers.forEach((response) => {
+      const difficulty = (response.question as any).difficultyLevel || 'MEDIUM';
 
       if (!difficultyMap.has(difficulty)) {
         difficultyMap.set(difficulty, {
@@ -170,10 +174,10 @@ export class AnalyticsService {
         incorrectAnswers,
         unansweredQuestions,
         accuracy: Number(accuracy.toFixed(2)),
-        totalScore: attempt.totalScore,
-        maxScore: attempt.maxScore,
-        percentage: Number(attempt.percentage),
-        timeTaken: attempt.timeTaken,
+        totalScore: Number(attempt.totalScore || 0),
+        maxScore: Number(attempt.maxScore || 0),
+        percentage: Number(attempt.percentage || 0),
+        timeTaken: attempt.timeTaken || 0,
         avgTimePerQuestion: Number(avgTimePerQuestion.toFixed(2)),
       },
       subjectWise,
@@ -289,9 +293,11 @@ export class AnalyticsService {
     // Based on weak subjects
     if (analytics.weakSubjects.length > 0) {
       const weakestSubject = analytics.weakSubjects[0];
-      recommendations.push(
-        `Focus more on ${weakestSubject.subjectName} where your accuracy is ${weakestSubject.accuracy.toFixed(1)}%`
-      );
+      if (weakestSubject) {
+        recommendations.push(
+          `Focus more on ${weakestSubject.subjectName} where your accuracy is ${weakestSubject.accuracy.toFixed(1)}%`
+        );
+      }
     }
 
     // Based on study time
@@ -333,7 +339,7 @@ export class AnalyticsService {
    * Get difficulty analysis for user
    */
   async getDifficultyAnalysis(userId: string) {
-    const testAttempts = await analyticsRepository.getUserTestPerformance(userId);
+    const __testAttempts = await analyticsRepository.getUserTestPerformance(userId);
 
     // This would need more detailed implementation based on responses
     // For now, returning a placeholder
@@ -347,7 +353,7 @@ export class AnalyticsService {
    * Get topic mastery for user
    */
   async getTopicMastery(userId: string): Promise<TopicMasteryDto> {
-    const subjectPerformance = await analyticsRepository.getUserSubjectPerformance(userId);
+    const __subjectPerformance = await analyticsRepository.getUserSubjectPerformance(userId);
 
     // This is a simplified version - in a real implementation,
     // you would query actual topic-level data
@@ -395,16 +401,16 @@ export class AnalyticsService {
     // Process revenue by plan
     const revenueByPlan = await Promise.all(
       revenueData.revenueByPlan.map(async (item: any) => {
-        const plan = await analyticsRepository['prisma'].subscriptionPlan.findUnique({
+        const plan = await prisma.subscriptionPlan.findUnique({
           where: { id: item.planId },
         });
 
-        return {
-          planId: item.planId,
-          planName: plan?.name || 'Unknown',
-          revenue: (plan?.price || 0) * item._count.id,
-          subscriptionCount: item._count.id,
-        };
+          return {
+            planId: item.planId,
+            planName: plan?.name || 'Unknown',
+            revenue: Number(plan?.price || 0) * item._count.id,
+            subscriptionCount: item._count.id,
+          };
       })
     );
 
@@ -420,7 +426,7 @@ export class AnalyticsService {
         });
       }
       const data = revenueMap.get(date);
-      data.revenue += payment.amount;
+      data.revenue += Number(payment.amount);
       data.subscriptions += 1;
     });
 
@@ -429,10 +435,10 @@ export class AnalyticsService {
     );
 
     const avgRevenuePerUser =
-      totalUsers.totalUsers > 0 ? revenueData.totalRevenue / totalUsers.totalUsers : 0;
+      totalUsers.totalUsers > 0 ? Number(revenueData.totalRevenue) / totalUsers.totalUsers : 0;
 
     return {
-      totalRevenue: revenueData.totalRevenue,
+      totalRevenue: Number(revenueData.totalRevenue),
       revenueByPlan,
       revenueOverTime,
       avgRevenuePerUser: Number(avgRevenuePerUser.toFixed(2)),

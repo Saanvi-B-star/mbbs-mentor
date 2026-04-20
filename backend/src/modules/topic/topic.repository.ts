@@ -356,7 +356,10 @@ export class TopicRepository {
 
       // Count bookmarks
       prisma.bookmark.count({
-        where: { topicId: id },
+        where: {
+          bookmarkableId: id,
+          bookmarkableType: 'TOPIC',
+        },
       }),
 
       // Count study sessions
@@ -395,7 +398,7 @@ export class TopicRepository {
         return true; // Circular reference detected
       }
 
-      const parent = await prisma.topic.findUnique({
+      const parent: { parentTopicId: string | null } | null = await prisma.topic.findUnique({
         where: { id: currentParentId },
         select: { parentTopicId: true },
       });

@@ -53,7 +53,7 @@ export class QuestionController {
    */
   async getQuestionById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const includeOptions = req.query.includeOptions !== 'false';
 
       const result = await questionService.getQuestionById(id, includeOptions);
@@ -74,7 +74,7 @@ export class QuestionController {
   async createQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data: CreateQuestionDto = req.body;
-      const userId = (req as any).user?.id;
+      const userId = (req.user as any)?.id;
 
       const result = await questionService.createQuestion(data, userId);
 
@@ -94,7 +94,7 @@ export class QuestionController {
    */
   async updateQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const data: UpdateQuestionDto = req.body;
 
       const result = await questionService.updateQuestion(id, data);
@@ -115,7 +115,7 @@ export class QuestionController {
    */
   async deleteQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await questionService.deleteQuestion(id);
 
@@ -134,7 +134,7 @@ export class QuestionController {
    */
   async approveQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await questionService.approveQuestion(id);
 
@@ -183,7 +183,7 @@ export class QuestionController {
   ): Promise<void> {
     try {
       const data: BulkImportQuestionDto = req.body;
-      const userId = (req as any).user?.id;
+      const userId = (req.user as any)?.id;
 
       const result = await questionService.bulkImportQuestions(data, userId);
 
@@ -203,7 +203,7 @@ export class QuestionController {
    */
   async createOption(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { questionId } = req.params;
+      const questionId = req.params.questionId as string;
       const data: CreateQuestionOptionDto = req.body;
 
       const result = await questionService.createOption(questionId, data);
@@ -224,7 +224,7 @@ export class QuestionController {
    */
   async updateOption(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { optionId } = req.params;
+      const optionId = req.params.optionId as string;
       const data: UpdateQuestionOptionDto = req.body;
 
       const result = await questionService.updateOption(optionId, data);
@@ -245,7 +245,7 @@ export class QuestionController {
    */
   async deleteOption(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { optionId } = req.params;
+      const optionId = req.params.optionId as string;
 
       await questionService.deleteOption(optionId);
 

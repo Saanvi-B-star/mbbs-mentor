@@ -2,7 +2,7 @@
  * Common API Types
  */
 
-import { User, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 /**
  * JWT Payload

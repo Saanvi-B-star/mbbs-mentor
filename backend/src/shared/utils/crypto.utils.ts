@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { config } from '@/config';
+import { UnauthorizedException } from '../exceptions/unauthorized.exception';
 
 /**
  * Hash password using bcrypt
@@ -23,7 +24,7 @@ export const comparePassword = async (password: string, hash: string): Promise<b
  */
 export const generateAccessToken = (payload: object): string => {
   return jwt.sign(payload, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
+    expiresIn: config.jwt.expiresIn as any,
   });
 };
 
@@ -32,7 +33,7 @@ export const generateAccessToken = (payload: object): string => {
  */
 export const generateRefreshToken = (payload: object): string => {
   return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn,
+    expiresIn: config.jwt.refreshExpiresIn as any,
   });
 };
 
@@ -43,7 +44,7 @@ export const verifyAccessToken = (token: string): any => {
   try {
     return jwt.verify(token, config.jwt.secret);
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    throw new UnauthorizedException('Invalid or expired token', 'AUTH_TOKEN_INVALID');
   }
 };
 
@@ -54,7 +55,7 @@ export const verifyRefreshToken = (token: string): any => {
   try {
     return jwt.verify(token, config.jwt.refreshSecret);
   } catch (error) {
-    throw new Error('Invalid or expired refresh token');
+    throw new UnauthorizedException('Invalid or expired refresh token', 'AUTH_REFRESH_TOKEN_INVALID');
   }
 };
 

@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isHydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
@@ -18,6 +19,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isLoading: false,
+      isHydrated: false,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -53,6 +55,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "admin-auth-storage",
       partialize: (state) => ({ user: state.user, token: state.token }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isHydrated = true;
+      },
     }
   )
 );

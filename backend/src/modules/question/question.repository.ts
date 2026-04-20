@@ -7,7 +7,8 @@ import {
   CreateQuestionOptionDto,
   UpdateQuestionOptionDto,
 } from './question.types';
-import { QuestionType } from '@prisma/client';
+// Removed unused QuestionType import
+import { BadRequestException } from '@/shared/exceptions';
 
 /**
  * Question Repository
@@ -99,8 +100,8 @@ export class QuestionRepository {
       include: {
         options: includeOptions
           ? {
-              orderBy: { sortOrder: 'asc' },
-            }
+            orderBy: { sortOrder: 'asc' },
+          }
           : false,
         topic: {
           select: {
@@ -139,8 +140,8 @@ export class QuestionRepository {
         createdById,
         options: options
           ? {
-              create: options,
-            }
+            create: options,
+          }
           : undefined,
       },
       include: {
@@ -255,8 +256,8 @@ export class QuestionRepository {
         },
         correctAttempts: isCorrect
           ? {
-              increment: 1,
-            }
+            increment: 1,
+          }
           : undefined,
       },
     });
@@ -266,6 +267,14 @@ export class QuestionRepository {
    * Find random questions based on filters
    */
   async findRandom(filters: RandomQuestionFilters) {
+    // Validate count
+    if (!filters.count || filters.count <= 0 || !Number.isInteger(filters.count)) {
+      throw new BadRequestException(
+        'Invalid count: must be a positive integer',
+        'INVALID_FILTER_COUNT'
+      );
+    }
+
     const where: any = {
       isActive: true,
       isApproved: true,
@@ -299,7 +308,7 @@ export class QuestionRepository {
     const maxSkip = Math.max(0, totalAvailable - filters.count);
     const randomSkip = Math.floor(Math.random() * (maxSkip + 1));
 
-    return await prisma.question.findMany({
+    const results = await prisma.question.findMany({
       where,
       skip: randomSkip,
       take: Math.min(filters.count, totalAvailable),
@@ -319,6 +328,8 @@ export class QuestionRepository {
         },
       },
     });
+
+    return results.slice(0, filters.count);
   }
 
   /**

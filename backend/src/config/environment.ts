@@ -58,6 +58,13 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APPLE_CLIENT_ID: z.string().optional(),
   APPLE_CLIENT_SECRET: z.string().optional(),
+  
+  // Groq AI (fallback/alternative to OpenRouter)
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_DEFAULT_MODEL: z.string().default('llama3-8b-8192'),
+
+  // Cohere (for embeddings)
+  COHERE_API_KEY: z.string().optional(),
 });
 
 /**
@@ -148,6 +155,17 @@ export const config = {
   // OpenAI (for embeddings)
   openai: {
     apiKey: env.OPENAI_API_KEY,
+  },
+
+  // Groq AI
+  groq: {
+    apiKey: env.GROQ_API_KEY,
+    defaultModel: env.GROQ_DEFAULT_MODEL,
+  },
+
+  // Cohere (for embeddings)
+  cohere: {
+    apiKey: env.COHERE_API_KEY,
   },
 
   // Pinecone (vector database)

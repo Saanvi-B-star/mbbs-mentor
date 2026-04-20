@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import { RATE_LIMIT, HTTP_STATUS } from '@/shared/constants';
+import { RATE_LIMIT } from '@/shared/constants';
 
 /**
  * Global Rate Limiter

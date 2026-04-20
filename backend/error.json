@@ -1,0 +1,13 @@
+{
+  "success": false,
+  "message": "Internal server error",
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Unexpected end of form",
+    "stack": "Error: Unexpected end of form\n    at Multipart._final (D:\\Scriptlanes2\\mbbs-mentor\\backend\\node_modules\\busboy\\lib\\types\\multipart.js:588:17)\n    at prefinish (node:internal/streams/writable:916:14)\n    at finishMaybe (node:internal/streams/writable:930:5)\n    at Multipart.Writable.end (node:internal/streams/writable:845:5)\n    at IncomingMessage.onend (node:internal/streams/readable:948:10)\n    at Object.onceWrapper (node:events:632:28)\n    at IncomingMessage.emit (node:events:518:28)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+  },
+  "meta": {
+    "timestamp": "2026-04-17T07:59:16.337Z",
+    "path": "/api/v1/notes/upload"
+  }
+}

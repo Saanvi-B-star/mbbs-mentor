@@ -34,6 +34,7 @@ export interface NoteResponseDto {
   fileSize: number;
   processingStatus: NoteProcStatus;
   extractedText?: string | null;
+  content?: string | null;
   formattedNotes?: string | null;
   summary?: string | null;
   pageCount?: number | null;

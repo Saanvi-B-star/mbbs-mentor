@@ -14,7 +14,7 @@ export class UserController {
    */
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await userService.getProfile(userId);
 
@@ -33,7 +33,7 @@ export class UserController {
    */
   async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: UpdateUserDto = req.body;
 
       const result = await userService.updateProfile(userId, data);
@@ -54,7 +54,7 @@ export class UserController {
    */
   async getUserStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await userService.getUserStats(userId);
 
@@ -73,7 +73,7 @@ export class UserController {
    */
   async deleteAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: DeleteAccountDto = req.body;
 
       await userService.deleteAccount(userId, data);
@@ -93,7 +93,7 @@ export class UserController {
    */
   async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
 
       const result = await userService.getUserById(userId);
 

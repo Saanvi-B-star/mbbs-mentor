@@ -82,7 +82,7 @@ export class AuthController {
    */
   async getCurrentUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
 
       const result = await authService.getCurrentUser(userId);
 
@@ -101,7 +101,7 @@ export class AuthController {
    */
   async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = (req.user as any).id;
       const data: ChangePasswordDto = req.body;
 
       await authService.changePassword(userId, data);

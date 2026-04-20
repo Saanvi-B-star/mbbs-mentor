@@ -90,7 +90,7 @@ class VectorService {
     const index = getPineconeIndex();
 
     // Generate query embedding
-    const { embedding } = await embeddingService.createEmbedding(query);
+    const { embedding } = await embeddingService.createEmbedding(query, 'search_query');
 
     // Query Pinecone
     const results = await index.query({

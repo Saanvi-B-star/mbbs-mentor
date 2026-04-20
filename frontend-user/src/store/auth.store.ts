@@ -13,6 +13,7 @@ interface AuthState {
   logout: () => void;
   setUser: (user: User | null) => void;
   setHydrated: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -66,6 +67,16 @@ export const useAuthStore = create<AuthState>()(
 
       setHydrated: () => {
         set({ isHydrated: true });
+      },
+      
+      refreshUser: async () => {
+        try {
+          const response = await apiClient.get("/auth/me");
+          const user = response.data.data;
+          set({ user });
+        } catch (error) {
+          console.error("Failed to refresh user:", error);
+        }
       },
     }),
     {

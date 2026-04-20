@@ -13,9 +13,9 @@ export class SESService {
   private fromName: string;
 
   constructor() {
-    this.client = sesClient;
-    this.fromEmail = awsConfig.ses.fromEmail;
-    this.fromName = awsConfig.ses.fromName;
+    this.client = sesClient as SESClient;
+    this.fromEmail = awsConfig.ses.fromEmail as string;
+    this.fromName = awsConfig.ses.fromName as string;
   }
 
   /**

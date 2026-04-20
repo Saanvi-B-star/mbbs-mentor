@@ -1,140 +1,91 @@
 "use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Flame, Target, Trophy, ArrowRight } from 'lucide-react';
+import { Flame, Target, Trophy, ArrowRight, Loader2, BookOpen, Clock, MessageSquare, FileText, Sparkles } from 'lucide-react';
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/lib/api-client";
+
+interface Analytics {
+  totalTests: number;
+  completedTests: number;
+  averageScore: number;
+  totalStudyTime: number;
+  aiInteractions: number;
+  notesUploaded: number;
+  strongSubjects: any[];
+  weakSubjects: any[];
+}
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const router = useRouter();
 
-  // Mock learning topics
-  const learningTopics = [
-    {
-      id: 1,
-      title: "Cardiovascular System",
-      nmcCompetency: "Understand heart and circulation",
-      difficulty: "medium",
-      duration: 45,
-      progress: 65,
-    },
-    {
-      id: 2,
-      title: "Pharmacology Basics",
-      nmcCompetency: "Drug mechanisms and interactions",
-      difficulty: "hard",
-      duration: 60,
-      progress: 30,
-    },
-    {
-      id: 3,
-      title: "Nervous System",
-      nmcCompetency: "Neural pathways and functions",
-      difficulty: "easy",
-      duration: 30,
-      progress: 85,
-    },
-  ];
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [recentNotes, setRecentNotes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, recsRes, notesRes] = await Promise.all([
+          apiClient.get("/analytics/user"),
+          apiClient.get("/analytics/recommendations"),
+          apiClient.get("/notes?limit=5"),
+          refreshUser(), // Refresh user profile to get latest tokens
+        ]);
+        setAnalytics(statsRes.data.data);
+        setRecommendations(recsRes.data.data);
+        setRecentNotes(notesRes.data.data?.notes || []);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   const stats = [
     {
-      label: "Total Notes",
-      value: "24",
-      icon: (
-        <svg
-          className="h-6 w-6 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
+      label: "Total Tests",
+      value: analytics?.totalTests || 0,
+      icon: <Target className="h-6 w-6 text-blue-600" />,
     },
     {
-      label: "Study Hours",
-      value: "42",
-      icon: (
-        <svg
-          className="h-6 w-6 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      label: "Study Minutes",
+      value: analytics?.totalStudyTime || 0,
+      icon: <Clock className="h-6 w-6 text-blue-600" />,
     },
     {
       label: "AI Queries",
-      value: "156",
-      icon: (
-        <svg
-          className="h-6 w-6 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-          />
-        </svg>
-      ),
+      value: analytics?.aiInteractions || 0,
+      icon: <MessageSquare className="h-6 w-6 text-blue-600" />,
     },
     {
-      label: "Topics Mastered",
-      value: "12",
-      icon: (
-        <svg
-          className="h-6 w-6 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      label: "Notes Uploaded",
+      value: analytics?.notesUploaded || 0,
+      icon: <FileText className="h-6 w-6 text-blue-600" />,
     },
   ];
 
-  const recentNotes = [
-    {
-      title: "Cardiovascular System",
-      date: "2 days ago",
-      subject: "Anatomy",
-    },
-    {
-      title: "Pharmacology Basics",
-      date: "3 days ago",
-      subject: "Pharmacology",
-    },
-    {
-      title: "Nervous System",
-      date: "5 days ago",
-      subject: "Physiology",
-    },
-  ];
+  const subjects = [
+    ...(analytics?.strongSubjects || []).map(s => ({ ...s, status: 'strong' })),
+    ...(analytics?.weakSubjects || []).map(s => ({ ...s, status: 'weak' })),
+  ].slice(0, 3);
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -153,27 +104,27 @@ export default function DashboardPage() {
         </div>
         <div className="relative z-10">
           <h1 className="text-4xl font-bold">Welcome back, {user?.name}! 👋</h1>
-          <p className="mt-3 text-blue-50 text-lg font-medium">Ready to continue your learning journey?</p>
+          <p className="mt-3 text-blue-50 text-lg font-medium">Ready to continue your medical learning journey?</p>
         </div>
 
         {/* Quick Stats */}
         <div className="mt-8 grid gap-6 sm:grid-cols-3 relative z-10">
           <div className="flex items-center gap-4 rounded-xl bg-white/15 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20">
-              <Flame className="h-8 w-8 text-orange-200" />
+              <Target className="h-8 w-8 text-orange-200" />
             </div>
             <div>
-              <p className="text-3xl font-bold">7</p>
-              <p className="text-sm text-white/90 font-medium">Day Streak</p>
+              <p className="text-3xl font-bold">{analytics?.totalTests || 0}</p>
+              <p className="text-sm text-white/90 font-medium">Tests Done</p>
             </div>
           </div>
           <div className="flex items-center gap-4 rounded-xl bg-white/15 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20">
-              <Target className="h-8 w-8 text-yellow-200" />
+              <Flame className="h-8 w-8 text-yellow-200" />
             </div>
             <div>
-              <p className="text-3xl font-bold">2450</p>
-              <p className="text-sm text-white/90 font-medium">Total XP</p>
+              <p className="text-3xl font-bold">{user?.currentTokenBalance || 0}</p>
+              <p className="text-sm text-white/90 font-medium">Available Tokens</p>
             </div>
           </div>
           <div className="flex items-center gap-4 rounded-xl bg-white/15 p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
@@ -181,8 +132,8 @@ export default function DashboardPage() {
               <Trophy className="h-8 w-8 text-green-200" />
             </div>
             <div>
-              <p className="text-3xl font-bold">8</p>
-              <p className="text-sm text-white/90 font-medium">Badges Earned</p>
+              <p className="text-3xl font-bold">{analytics?.averageScore || 0}%</p>
+              <p className="text-sm text-white/90 font-medium">Avg Accuracy</p>
             </div>
           </div>
         </div>
@@ -191,56 +142,89 @@ export default function DashboardPage() {
       {/* Today's Learning Topics */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">📚 Today's Recommended Topics</h2>
+          <h2 className="text-2xl font-bold">🏫 Subject Performance</h2>
           <Button
             variant="ghost"
-            onClick={() => router.push('/learning')}
+            onClick={() => router.push('/notes')}
             className="hover:text-blue-600"
           >
-            View All <ArrowRight className="ml-2 h-4 w-4" />
+            View Materials <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {learningTopics.map((topic) => (
+          {subjects.length > 0 ? subjects.map((subj) => (
             <Card
-              key={topic.id}
+              key={subj.subjectId}
               className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-300"
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Badge
-                    variant={topic.difficulty === 'easy' ? 'default' : topic.difficulty === 'medium' ? 'secondary' : 'destructive'}
-                    className="rounded-full px-3 py-1"
+                    variant={subj.status === 'strong' ? 'default' : 'secondary'}
+                    className={`rounded-full px-3 py-1 ${subj.status === 'strong' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}
                   >
-                    {topic.difficulty}
+                    {subj.status === 'strong' ? 'Strength' : 'Improvement needed'}
                   </Badge>
-                  <span className="text-sm text-gray-600 font-medium">{topic.duration} min</span>
+                  <span className="text-sm text-gray-600 font-medium">{subj.testsAttempted} tests</span>
                 </div>
                 <CardTitle className="text-xl group-hover:text-blue-600 transition-colors mt-4">
-                  {topic.title}
+                  {subj.subjectName}
                 </CardTitle>
-                <CardDescription className="text-sm mt-2">{topic.nmcCompetency}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-semibold text-blue-600">{topic.progress}%</span>
+                    <span className="text-gray-600">Accuracy</span>
+                    <span className="font-semibold text-blue-600">{Math.round(subj.accuracy)}%</span>
                   </div>
-                  <Progress value={topic.progress} className="h-2.5" />
+                  <Progress value={subj.accuracy} className="h-2.5" />
                   <Button
-                    className="mt-4 w-full rounded-full hover:scale-105 transition-transform duration-300 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => router.push('/learning')}
+                    variant="outline"
+                    className="mt-4 w-full rounded-full border-blue-200 text-blue-600 hover:bg-blue-50"
+                    onClick={() => router.push('/tests')}
                   >
-                    {topic.progress > 0 ? 'Continue' : 'Start Learning'}
+                    Practice Questions
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <div className="col-span-full py-12 text-center bg-white rounded-3xl border-2 border-dashed border-gray-100">
+               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                 <Target className="h-6 w-6" />
+               </div>
+               <h3 className="text-lg font-semibold text-gray-900">No performance data yet</h3>
+               <p className="text-gray-500">Take a few tests to see your subject-wise analysis here.</p>
+               <Button onClick={() => router.push('/tests')} className="mt-4 bg-blue-600">Take First Test</Button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Recommended Advice */}
+      {recommendations.length > 0 && (
+        <Card className="bg-blue-600 border-0 text-white overflow-hidden shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Sparkles className="w-5 h-5 text-blue-100" />
+              </div>
+              <div>
+                <h3 className="font-bold flex items-center gap-2">AI Study Recommendation</h3>
+                <ul className="mt-2 space-y-1">
+                  {recommendations.slice(0, 2).map((rec, i) => (
+                    <li key={i} className="text-sm text-blue-50 flex items-start gap-2">
+                       <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-300 shrink-0" />
+                       {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -263,20 +247,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Notes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Notes</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">My Recent Notes</h2>
           <div className="space-y-4">
-            {recentNotes.map((note, index) => (
+            {recentNotes.length > 0 ? recentNotes.map((note) => (
               <div
-                key={index}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-300"
+                key={note.id}
+                onClick={() => router.push(`/notes?id=${note.id}`)}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all cursor-pointer group"
               >
-                <div>
-                  <h3 className="font-medium text-gray-900">{note.title}</h3>
-                  <p className="text-sm text-gray-600">{note.subject}</p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg group-hover:bg-blue-50 transition-colors">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 line-clamp-1">{note.title}</h3>
+                    <p className="text-xs text-gray-500">{new Date(note.createdAt).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <span className="text-xs text-gray-500">{note.date}</span>
+                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
               </div>
-            ))}
+            )) : (
+              <div className="py-8 text-center text-gray-500 text-sm italic">
+                No notes uploaded yet.
+              </div>
+            )}
           </div>
         </div>
 

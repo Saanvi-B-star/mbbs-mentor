@@ -40,8 +40,7 @@ export class TopicController {
    */
   async getTopicById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
-
+      const id = req.params.id as string;
       const result = await topicService.getTopicById(id);
 
       res.status(HTTP_STATUS.OK).json({
@@ -79,7 +78,7 @@ export class TopicController {
    */
   async updateTopic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const data: UpdateTopicDto = req.body;
 
       const result = await topicService.updateTopic(id, data);
@@ -100,7 +99,7 @@ export class TopicController {
    */
   async deleteTopic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await topicService.deleteTopic(id);
 
@@ -119,7 +118,7 @@ export class TopicController {
    */
   async getTopicsBySubject(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { subjectId } = req.params;
+      const subjectId = req.params.subjectId as string;
 
       const result = await topicService.getTopicsBySubject(subjectId);
 
@@ -138,7 +137,7 @@ export class TopicController {
    */
   async getTopicHierarchy(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { subjectId } = req.params;
+      const subjectId = req.params.subjectId as string;
 
       const result = await topicService.getTopicHierarchy(subjectId);
 
@@ -157,7 +156,7 @@ export class TopicController {
    */
   async getTopicMaterials(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await topicService.getTopicWithMaterials(id);
 
@@ -176,7 +175,7 @@ export class TopicController {
    */
   async getTopicStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await topicService.getTopicStats(id);
 

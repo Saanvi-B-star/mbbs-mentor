@@ -1,22 +1,13 @@
 /**
  * Embedding Service
- * Generates text embeddings using OpenAI
+ * Generates text embeddings using Cohere
  */
 
-import OpenAI from 'openai';
-import { config } from '@/config';
+import { cohereClient } from '../clients/cohere.client';
+import { logger } from '@/config';
 import { EmbeddingResult } from '../llm.types';
 
-const EMBEDDING_MODEL = 'openai/text-embedding-3-small';
-
-/**
- * OpenAI client for embeddings
- * Uses OpenRouter API with OpenAI-compatible endpoints
- */
-const openaiClient = new OpenAI({
-  apiKey: config.openai.apiKey,
-  baseURL: 'https://openrouter.ai/api/v1',
-});
+const EMBEDDING_MODEL = 'embed-english-v3.0';
 
 /**
  * Embedding Service Class
@@ -25,39 +16,71 @@ class EmbeddingService {
   /**
    * Generate embedding for text
    * @param text - Text to embed
+   * @param inputType - Cohere input type ('search_document' for indexing, 'search_query' for matching)
    * @returns Embedding vector
    */
-  async createEmbedding(text: string): Promise<EmbeddingResult> {
-    const response = await openaiClient.embeddings.create({
-      model: EMBEDDING_MODEL,
-      input: text.trim(),
-    });
-
-    const firstEmbedding = response.data[0];
-    if (!firstEmbedding) {
-      throw new Error('No embedding returned from OpenAI');
+  async createEmbedding(
+    text: string, 
+    inputType: 'search_document' | 'search_query' | 'classification' | 'clustering' = 'search_document'
+  ): Promise<EmbeddingResult> {
+    if (!cohereClient) {
+      throw new Error('Cohere client not initialized. Check COHERE_API_KEY.');
     }
 
+    const response = await cohereClient.embed({
+      texts: [text.trim()],
+      model: EMBEDDING_MODEL,
+      inputType: inputType,
+    });
+
+    // Check for embeddings in the response
+    // Cohere v3 returns embeddings as a property on the response
+    const embeddings = (response as any).embeddings;
+    
+    if (!embeddings || (Array.isArray(embeddings) && embeddings.length === 0)) {
+      throw new Error('No embedding returned from Cohere');
+    }
+
+    // Convert to number[] if it's float embeddings
+    const embedding = Array.isArray(embeddings[0]) ? embeddings[0] : [];
+
     return {
-      embedding: firstEmbedding.embedding,
-      tokensUsed: response.usage.total_tokens,
+      embedding,
+      tokensUsed: 0, // Cohere SDK doesn't return tokens in a standard way here
     };
   }
 
   /**
    * Generate embeddings for multiple texts
    * @param texts - Array of texts to embed
+   * @param inputType - Cohere input type
    * @returns Array of embeddings
    */
-  async createBatchEmbeddings(texts: string[]): Promise<EmbeddingResult[]> {
-    const response = await openaiClient.embeddings.create({
+  async createBatchEmbeddings(
+    texts: string[],
+    inputType: 'search_document' | 'search_query' | 'classification' | 'clustering' = 'search_document'
+  ): Promise<EmbeddingResult[]> {
+    if (!cohereClient) {
+      throw new Error('Cohere client not initialized. Check COHERE_API_KEY.');
+    }
+
+    if (texts.length === 0) return [];
+
+    const response = await cohereClient.embed({
+      texts: texts.map((t) => t.trim()),
       model: EMBEDDING_MODEL,
-      input: texts.map((t) => t.trim()),
+      inputType: inputType,
     });
 
-    return response.data.map((item) => ({
-      embedding: item.embedding,
-      tokensUsed: Math.floor(response.usage.total_tokens / texts.length),
+    const embeddings = (response as any).embeddings;
+
+    if (!Array.isArray(embeddings)) {
+      throw new Error('Invalid response from Cohere embeddings');
+    }
+
+    return embeddings.map((emb: any) => ({
+      embedding: Array.isArray(emb) ? emb : [],
+      tokensUsed: 0,
     }));
   }
 }

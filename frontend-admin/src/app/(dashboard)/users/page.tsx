@@ -1,48 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import apiClient from "@/lib/api-client";
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "student",
-      status: "active",
-      joined: "2024-01-15",
-      notes: 24,
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "student",
-      status: "active",
-      joined: "2024-01-20",
-      notes: 18,
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      role: "student",
-      status: "inactive",
-      joined: "2024-02-01",
-      notes: 5,
-    },
-    {
-      id: 4,
-      name: "Sarah Williams",
-      email: "sarah@example.com",
-      role: "student",
-      status: "active",
-      joined: "2024-02-10",
-      notes: 32,
-    },
-  ];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await apiClient.get('/users', { params: { limit: 50, search: searchQuery } });
+        setUsers(res.data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // debounce search
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
     <div className="max-w-7xl mx-auto">

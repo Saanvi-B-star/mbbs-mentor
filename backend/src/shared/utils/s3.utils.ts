@@ -17,6 +17,19 @@ export const uploadToS3 = async (
   const randomPrefix = generateRandomString(16);
   const key = `${folder}/${randomPrefix}-${sanitized}`;
 
+  if (!s3Client) {
+    console.warn("AWS S3 is not configured. Saving file locally to public folder.");
+    const fs = require('fs');
+    const path = require('path');
+    const uploadDir = path.join(process.cwd(), 'public', folder);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const localPath = path.join(uploadDir, `${randomPrefix}-${sanitized}`);
+    fs.writeFileSync(localPath, file);
+    return `http://localhost:${process.env.PORT || 5000}/${key}`;
+  }
+
   const command = new PutObjectCommand({
     Bucket: awsConfig.s3.bucketName,
     Key: key,
@@ -24,9 +37,15 @@ export const uploadToS3 = async (
     ContentType: mimetype,
   });
 
-  await s3Client.send(command);
-
-  return `https://${awsConfig.s3.bucketName}.s3.${awsConfig.s3.region}.amazonaws.com/${key}`;
+  try {
+    await s3Client!.send(command);
+    const url = `https://${awsConfig.s3.bucketName}.s3.${awsConfig.s3.region}.amazonaws.com/${key}`;
+    console.log(`Successfully uploaded to S3: ${url}`);
+    return url;
+  } catch (error) {
+    console.error(`Error uploading to S3: ${error}`);
+    throw error;
+  }
 };
 
 /**
@@ -62,7 +81,7 @@ export const generateUploadUrl = async (
     ContentType: mimetype,
   });
 
-  const url = await getSignedUrl(s3Client, command, { expiresIn });
+  const url = await getSignedUrl(s3Client!, command, { expiresIn });
 
   return { url, key };
 };
@@ -79,7 +98,7 @@ export const generateDownloadUrl = async (
     Key: key,
   });
 
-  return getSignedUrl(s3Client, command, { expiresIn });
+  return getSignedUrl(s3Client!, command, { expiresIn });
 };
 
 /**
@@ -91,7 +110,7 @@ export const deleteFromS3 = async (key: string): Promise<void> => {
     Key: key,
   });
 
-  await s3Client.send(command);
+  await s3Client!.send(command);
 };
 
 /**

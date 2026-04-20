@@ -307,10 +307,16 @@ export default function TopicContentPage() {
                                         <div className="mb-8">
                                             <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 group">
                                                 <img
-                                                    src={`${BACKEND_URL}${material.fileUrl || material.thumbnailUrl}`}
+                                                    src={material.fileUrl?.startsWith('http') || material.thumbnailUrl?.startsWith('http') 
+                                                        ? (material.fileUrl || material.thumbnailUrl || '') 
+                                                        : `${BACKEND_URL}${material.fileUrl || material.thumbnailUrl}`}
                                                     alt={material.title}
                                                     className="w-full h-auto max-h-96 object-contain cursor-pointer hover:scale-105 transition-transform duration-300"
-                                                    onClick={() => setSelectedImage(`${BACKEND_URL}${material.fileUrl || material.thumbnailUrl}`)}
+                                                    onClick={() => setSelectedImage(
+                                                        (material.fileUrl?.startsWith('http') || material.thumbnailUrl?.startsWith('http'))
+                                                        ? (material.fileUrl || material.thumbnailUrl || '')
+                                                        : `${BACKEND_URL}${material.fileUrl || material.thumbnailUrl}`
+                                                    )}
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
                                                         target.style.display = 'none';
