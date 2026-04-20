@@ -339,7 +339,8 @@ export class AnalyticsService {
    * Get difficulty analysis for user
    */
   async getDifficultyAnalysis(userId: string) {
-    const __testAttempts = await analyticsRepository.getUserTestPerformance(userId);
+    // TODO: Implement difficulty analysis using test performance data
+    await analyticsRepository.getUserTestPerformance(userId);
 
     // This would need more detailed implementation based on responses
     // For now, returning a placeholder
@@ -353,7 +354,8 @@ export class AnalyticsService {
    * Get topic mastery for user
    */
   async getTopicMastery(userId: string): Promise<TopicMasteryDto> {
-    const __subjectPerformance = await analyticsRepository.getUserSubjectPerformance(userId);
+    // TODO: Implement topic mastery using subject performance data
+    await analyticsRepository.getUserSubjectPerformance(userId);
 
     // This is a simplified version - in a real implementation,
     // you would query actual topic-level data
@@ -405,12 +407,12 @@ export class AnalyticsService {
           where: { id: item.planId },
         });
 
-          return {
-            planId: item.planId,
-            planName: plan?.name || 'Unknown',
-            revenue: Number(plan?.price || 0) * item._count.id,
-            subscriptionCount: item._count.id,
-          };
+        return {
+          planId: item.planId,
+          planName: plan?.name || 'Unknown',
+          revenue: Number(plan?.price || 0) * item._count.id,
+          subscriptionCount: item._count.id,
+        };
       })
     );
 

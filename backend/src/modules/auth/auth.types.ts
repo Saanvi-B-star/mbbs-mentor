@@ -1,4 +1,4 @@
-import { AuthProvider, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 /**
  * Auth Module Types

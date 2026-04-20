@@ -4,7 +4,7 @@
  */
 
 import { cohereClient } from '../clients/cohere.client';
-import { logger } from '@/config';
+// Removed unused logger import
 import { EmbeddingResult } from '../llm.types';
 
 const EMBEDDING_MODEL = 'embed-english-v3.0';

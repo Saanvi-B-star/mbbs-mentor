@@ -1,13 +1,11 @@
 import { prisma, logger } from '@/config';
-import axios from 'axios';
+// Duplicate import removed
 import {
-  S3Client,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { textractClient } from '@/config/aws.config';
 import {
   DetectDocumentTextCommand,
-  AnalyzeDocumentCommand,
 } from '@aws-sdk/client-textract';
 import { NoteProcStatus, UserNote } from '@prisma/client';
 // Duplicate import removed
@@ -16,6 +14,7 @@ import { chunkText } from '@/shared/utils/text.utils';
 import { llmService } from '@/modules/llm/llm.service';
 import { vectorService } from '@/modules/llm/vector/vector.service';
 import Tesseract from 'tesseract.js';
+// @ts-ignore
 import pdfParse from 'pdf-parse';
 const parsePdf = pdfParse as any;
 import * as path from 'path';

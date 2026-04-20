@@ -5,7 +5,6 @@ import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-  generateRandomString,
 } from '@/shared/utils';
 import {
   UnauthorizedException,
@@ -47,8 +46,9 @@ export class AuthService {
     // Hash password
     const passwordHash = await hashPassword(data.password);
 
-    // Generate email verification token
-    const verificationToken = generateRandomString(32);
+    // TODO: Implement email verification token
+    // const verificationToken = generateRandomString(32);
+    // await emailService.sendVerificationEmail(data.email, verificationToken);
 
     // Create user with initial token balance
     const user = await prisma.user.create({
@@ -258,18 +258,16 @@ export class AuthService {
       return;
     }
 
-    // Generate reset token
-    const resetToken = generateRandomString(32);
-
-    // TODO: Store reset token with expiry in database
-    // TODO: Send reset email
+    // TODO: Implement password reset token
+    // const resetToken = generateRandomString(32);
+    // Store reset token with expiry in database
     // await emailService.sendPasswordResetEmail(email, resetToken);
   }
 
   /**
    * Reset password with token
    */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+  async resetPassword(_token: string, _newPassword: string): Promise<void> {
     // TODO: Verify token and get user
     // For now, throw error
     throw new ValidationException('Password reset not implemented yet');
@@ -278,7 +276,7 @@ export class AuthService {
   /**
    * Verify email
    */
-  async verifyEmail(token: string): Promise<void> {
+  async verifyEmail(_token: string): Promise<void> {
     // TODO: Verify token and update user
     throw new ValidationException('Email verification not implemented yet');
   }

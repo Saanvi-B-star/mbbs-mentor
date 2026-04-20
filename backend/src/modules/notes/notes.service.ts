@@ -244,14 +244,26 @@ Return ONLY a JSON array of objects.`;
     });
 
     try {
+      const answer = completion?.answer || '';
       // Extract JSON array from LLM response (handling potential markdown blocks)
-      const jsonString = completion.answer.includes('```json') 
-        ? completion.answer.split('```json')[1].split('```')[0].trim()
-        : completion.answer.trim();
-      
-      const flashcards = JSON.parse(jsonString);
+      let jsonString = answer.trim();
+
+      if (answer.includes('```json')) {
+        const parts = answer.split('```json');
+        if (parts.length > 1) {
+          const contentAfterJson = parts[1];
+          if (contentAfterJson) {
+            const jsonContent = contentAfterJson.split('```');
+            if (jsonContent && jsonContent.length > 0 && jsonContent[0]) {
+              jsonString = jsonContent[0].trim();
+            }
+          }
+        }
+      }
+
+      const flashcards = jsonString ? JSON.parse(jsonString) : [];
       return Array.isArray(flashcards) ? flashcards : [];
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Failed to parse AI-generated flashcards:', err);
       return [
         {

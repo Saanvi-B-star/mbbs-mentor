@@ -35,7 +35,7 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = config.corsOrigin;
       if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
         callback(null, true);
@@ -97,7 +97,7 @@ app.use(globalRateLimiter);
 
 // ==================== HEALTH CHECK ====================
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Server is healthy',
@@ -110,7 +110,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'MBBS Mentor API',
@@ -138,7 +138,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // Swagger JSON endpoint
-app.get('/api-docs.json', (req: Request, res: Response) => {
+app.get('/api-docs.json', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
@@ -178,7 +178,7 @@ app.use(`${API_VERSION.V1}/llm`, llmRoutes);
 app.use(`${API_VERSION.V1}/rag`, ragRoutes);
 
 // API info endpoint
-app.get(`${API_VERSION.V1}`, (req: Request, res: Response) => {
+app.get(`${API_VERSION.V1}`, (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'MBBS Mentor API v1',

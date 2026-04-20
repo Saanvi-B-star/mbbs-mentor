@@ -2,36 +2,53 @@
   "compilerOptions": {
     /* Language and Environment */
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-
     /* Modules */
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"],
-      "@config/*": ["config/*"],
-      "@middleware/*": ["middleware/*"],
-      "@modules/*": ["modules/*"],
-      "@shared/*": ["shared/*"],
-      "@database/*": ["database/*"],
-      "@types/*": ["types/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@config/*": [
+        "config/*"
+      ],
+      "@middleware/*": [
+        "middleware/*"
+      ],
+      "@modules/*": [
+        "modules/*"
+      ],
+      "@shared/*": [
+        "shared/*"
+      ],
+      "@database/*": [
+        "database/*"
+      ],
+      "@types/*": [
+        "types/*"
+      ]
     },
     "resolveJsonModule": true,
-
+    "plugins": [
+      {
+        "transform": "typescript-transform-paths"
+      }
+    ],
     /* Emit */
     "outDir": "./dist",
     "removeComments": true,
     "sourceMap": true,
-
     /* Interop Constraints */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-
     /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
@@ -46,10 +63,16 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-
     /* Completeness */
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

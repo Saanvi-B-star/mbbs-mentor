@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
-import { HTTP_STATUS, API_MESSAGES } from '@/shared/constants';
+import { HTTP_STATUS } from '@/shared/constants';
 import {
   RegisterDto,
   LoginDto,
@@ -176,7 +176,7 @@ export class AuthController {
    * Logout
    * POST /api/v1/auth/logout
    */
-  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async logout(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // TODO: Implement token blacklist if needed
 
@@ -185,7 +185,7 @@ export class AuthController {
         message: 'Logout successful',
       });
     } catch (error) {
-      next(error);
+      if (next) next(error);
     }
   }
 
@@ -197,7 +197,7 @@ export class AuthController {
    * Passport middleware attaches user data to req.user.
    * We process the OAuth data, create/login user, and redirect to frontend with JWT.
    */
-  async googleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async googleCallback(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       // User data from Passport Google strategy
       const googleUser = req.user as {
