@@ -57,7 +57,8 @@ interface TestResult {
   answers: {
     questionId: string;
     isCorrect: boolean;
-    selectedOptionId: string;
+    selectedOptionId?: string;
+    answerText?: string;
     question: Question;
   }[];
 }
@@ -165,11 +166,10 @@ function ConfigForm({ onStart }: ConfigFormProps) {
                   <button
                     key={t}
                     onClick={() => setTestType(t)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                      testType === t
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 hover:border-blue-300 text-gray-600"
-                    }`}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all ${testType === t
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-blue-300 text-gray-600"
+                      }`}
                   >
                     <div className="font-semibold capitalize">{t.toLowerCase()}</div>
                     <div className="text-xs mt-1 opacity-75">
@@ -204,13 +204,12 @@ function ConfigForm({ onStart }: ConfigFormProps) {
                     key={d}
                     type="button"
                     onClick={() => setDifficulty(d)}
-                    className={`flex-1 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                      difficulty === d
-                        ? d === "EASY" ? "border-green-500 bg-green-50 text-green-700"
-                          : d === "MEDIUM" ? "border-amber-500 bg-amber-50 text-amber-700"
+                    className={`flex-1 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all ${difficulty === d
+                      ? d === "EASY" ? "border-green-500 bg-green-50 text-green-700"
+                        : d === "MEDIUM" ? "border-amber-500 bg-amber-50 text-amber-700"
                           : "border-red-500 bg-red-50 text-red-700"
-                        : "border-gray-200 hover:border-gray-300 text-gray-600"
-                    }`}
+                      : "border-gray-200 hover:border-gray-300 text-gray-600"
+                      }`}
                   >
                     {d.charAt(0) + d.slice(1).toLowerCase()}
                   </button>
@@ -231,11 +230,10 @@ function ConfigForm({ onStart }: ConfigFormProps) {
                     key={f.id}
                     type="button"
                     onClick={() => setFormat(f.id as any)}
-                    className={`p-3 rounded-xl border-2 text-center transition-all ${
-                      format === f.id
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 hover:border-blue-300 text-gray-600"
-                    }`}
+                    className={`p-3 rounded-xl border-2 text-center transition-all ${format === f.id
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-blue-300 text-gray-600"
+                      }`}
                   >
                     <div className="text-sm font-semibold">{f.label}</div>
                     <div className="text-[10px] opacity-60">{f.desc}</div>
@@ -301,7 +299,7 @@ function ConfigForm({ onStart }: ConfigFormProps) {
 interface ActiveQuizProps {
   test: TestData;
   attempt: AttemptState;
-  setAttempt: React.Dispatch<React.SetStateAction<AttemptState>>;
+  setAttempt: React.Dispatch<React.SetStateAction<AttemptState | null>>;
   onFinish: (results: TestResult) => void;
 }
 
@@ -315,19 +313,23 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
   const answered = Object.keys(attempt.answers).length;
 
   const select = (value: string, isText = false) => {
-    setAttempt((prev) => ({
-      ...prev,
-      answers: { ...prev.answers, [current.id]: value },
-    }));
+    setAttempt((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        answers: { ...prev.answers, [current.id]: value },
+      };
+    });
     // Auto-submit answer
     apiClient.post(`/tests/attempts/${attempt.attemptId}/answer`, {
       questionId: current.id,
       [isText ? "answerText" : "selectedOptionId"]: value,
-    }).catch(() => {});
+    }).catch(() => { });
   };
 
   const toggleFlag = () => {
     setAttempt((prev) => {
+      if (!prev) return null;
       const next = new Set(prev.flagged);
       next.has(current.id) ? next.delete(current.id) : next.add(current.id);
       return { ...prev, flagged: next };
@@ -335,7 +337,10 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
   };
 
   const go = (dir: -1 | 1) => {
-    setAttempt((prev) => ({ ...prev, currentIndex: prev.currentIndex + dir }));
+    setAttempt((prev) => {
+      if (!prev) return null;
+      return { ...prev, currentIndex: prev.currentIndex + dir };
+    });
   };
 
   const handleSubmit = async () => {
@@ -344,7 +349,7 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
       const res = await apiClient.post(`/tests/attempts/${attempt.attemptId}/submit`);
       const resultsRes = await apiClient.get(`/tests/attempts/${attempt.attemptId}/results`);
       const data = resultsRes.data.data;
-      
+
       // Map results with question data for review
       const answers = (data.answers || []).map((a: any) => ({
         ...a,
@@ -364,14 +369,14 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
       const localAnswers = questions.map((q) => {
         const selectedId = attempt.answers[q.id];
         const questionObj = questions.find((qu) => qu.id === q.id);
-        
+
         // For local grading, we can only really grade MCQ/TRUE_FALSE
         let isCorrect = false;
         if (q.questionType === "MCQ" || q.questionType === "TRUE_FALSE") {
           const correctOption = questionObj?.options.find((o) => o.isCorrect);
           isCorrect = selectedId === correctOption?.id;
         }
-        
+
         return {
           questionId: q.id,
           isCorrect: isCorrect,
@@ -441,11 +446,10 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
               </Badge>
               <button
                 onClick={toggleFlag}
-                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors ${
-                  attempt.flagged.has(current.id)
-                    ? "border-orange-400 bg-orange-50 text-orange-600"
-                    : "border-gray-200 text-gray-400 hover:text-orange-500"
-                }`}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors ${attempt.flagged.has(current.id)
+                  ? "border-orange-400 bg-orange-50 text-orange-600"
+                  : "border-gray-200 text-gray-400 hover:text-orange-500"
+                  }`}
               >
                 <Flag className="w-3 h-3" />
                 {attempt.flagged.has(current.id) ? "Flagged" : "Flag"}
@@ -476,16 +480,14 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
                     <button
                       key={opt.id}
                       onClick={() => select(opt.id)}
-                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all group ${
-                        selected
-                          ? "border-blue-500 bg-blue-50 shadow-sm"
-                          : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"
-                      }`}
+                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all group ${selected
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"
+                        }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-sm font-bold transition-colors ${
-                          selected ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300 text-gray-500 group-hover:border-blue-400"
-                        }`}>
+                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-sm font-bold transition-colors ${selected ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300 text-gray-500 group-hover:border-blue-400"
+                          }`}>
                           {String.fromCharCode(65 + i)}
                         </div>
                         <span className={`text-sm leading-relaxed ${selected ? "text-blue-800 font-medium" : "text-gray-700"}`}>
@@ -516,16 +518,15 @@ function ActiveQuiz({ test, attempt, setAttempt, onFinish }: ActiveQuizProps) {
             {questions.map((q, i) => (
               <button
                 key={q.id}
-                onClick={() => setAttempt((p) => ({ ...p, currentIndex: i }))}
-                className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
-                  i === attempt.currentIndex
-                    ? "bg-blue-600 text-white"
-                    : attempt.answers[q.id]
+                onClick={() => setAttempt((p) => p ? { ...p, currentIndex: i } : null)}
+                className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${i === attempt.currentIndex
+                  ? "bg-blue-600 text-white"
+                  : attempt.answers[q.id]
                     ? "bg-green-100 text-green-700 border border-green-300"
                     : attempt.flagged.has(q.id)
-                    ? "bg-orange-100 text-orange-600 border border-orange-300"
-                    : "bg-white text-gray-500 border border-gray-200"
-                }`}
+                      ? "bg-orange-100 text-orange-600 border border-orange-300"
+                      : "bg-white text-gray-500 border border-gray-200"
+                  }`}
               >
                 {i + 1}
               </button>
@@ -615,7 +616,7 @@ function Results({ results, test, onRestart }: ResultsProps) {
               const q = tq.question;
               const a = results.answers.find(ans => ans.questionId === q.id);
               const isAnswered = !!a;
-              
+
               return (
                 <Card key={q.id} className={`border-2 rounded-2xl shadow-sm ${!isAnswered ? "border-amber-200" : a.isCorrect ? "border-green-200" : "border-red-200"}`}>
                   <CardContent className="p-5">
@@ -650,13 +651,12 @@ function Results({ results, test, onRestart }: ResultsProps) {
                           return (
                             <div
                               key={opt.id}
-                              className={`p-3 rounded-xl text-sm ${
-                                isCorrect
-                                  ? "bg-green-50 border border-green-200 text-green-800"
-                                  : isSelected && !isCorrect
+                              className={`p-3 rounded-xl text-sm ${isCorrect
+                                ? "bg-green-50 border border-green-200 text-green-800"
+                                : isSelected && !isCorrect
                                   ? "bg-red-50 border border-red-200 text-red-700"
                                   : "bg-gray-50 border border-gray-100 text-gray-600"
-                              }`}
+                                }`}
                             >
                               {opt.optionText}
                               {isCorrect && <span className="ml-2 text-xs font-semibold text-green-600">✓ Correct</span>}
