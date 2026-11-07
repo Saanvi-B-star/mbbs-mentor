@@ -1,6 +1,17 @@
 import { prisma } from '@/config';
-import { TransactionType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 import { TokenTransactionQuery } from './token.types';
+import { InsufficientTokensException } from '@/shared/exceptions';
+import { ERROR_CODES } from '@/shared/constants';
+
+type CreateTransactionData = {
+  userId: string;
+  transactionType: TransactionType;
+  amount: number;
+  feature?: string;
+  referenceId?: string;
+  description?: string;
+};
 
 /**
  * Token Repository
@@ -26,67 +37,86 @@ export class TokenRepository {
   /**
    * Create token transaction and update balance
    */
-  async createTransaction(data: {
-    userId: string;
-    transactionType: TransactionType;
-    amount: number;
-    feature?: string;
-    referenceId?: string;
-    description?: string;
-  }) {
-    return await prisma.$transaction(async (tx) => {
-      // Get current user balance
-      const user = await tx.user.findUnique({
-        where: { id: data.userId },
-        select: { currentTokenBalance: true, totalTokensEarned: true, totalTokensSpent: true },
-      });
+  async createTransaction(data: CreateTransactionData) {
+    return prisma.$transaction((tx) => this.createTransactionInTransaction(tx, data));
+  }
 
-      if (!user) {
-        throw new Error('User not found');
-      }
+  async createTransactionOnce(data: CreateTransactionData & { referenceId: string }) {
+    return prisma.$transaction((tx) => this.createTransactionOnceInTransaction(tx, data));
+  }
 
-      // Calculate new balance
-      let balanceChange = data.amount;
-      if (data.transactionType === 'SPENT') {
-        balanceChange = -Math.abs(data.amount);
-      }
-
-      const newBalance = user.currentTokenBalance + balanceChange;
-
-      // Create transaction record
-      const transaction = await tx.tokenTransaction.create({
-        data: {
-          userId: data.userId,
-          transactionType: data.transactionType,
-          amount: data.amount,
-          balanceAfter: newBalance,
-          feature: data.feature,
-          referenceId: data.referenceId,
-          description: data.description,
-        },
-      });
-
-      // Update user balance
-      const updateData: any = {
-        currentTokenBalance: newBalance,
-      };
-
-      if (data.transactionType === 'SPENT') {
-        updateData.totalTokensSpent = user.totalTokensSpent + Math.abs(data.amount);
-      } else {
-        updateData.totalTokensEarned = user.totalTokensEarned + data.amount;
-      }
-
-      await tx.user.update({
-        where: { id: data.userId },
-        data: updateData,
-      });
-
-      return {
-        transaction,
-        newBalance,
-      };
+  async createTransactionOnceInTransaction(
+    tx: Prisma.TransactionClient,
+    data: CreateTransactionData & { referenceId: string }
+  ) {
+    await tx.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${data.userId} FOR UPDATE`;
+    const existing = await tx.tokenTransaction.findFirst({
+      where: {
+        userId: data.userId,
+        transactionType: data.transactionType,
+        feature: data.feature,
+        referenceId: data.referenceId,
+      },
     });
+    if (existing) {
+      return { transaction: existing, newBalance: existing.balanceAfter };
+    }
+
+    const user = await tx.user.findUnique({
+      where: { id: data.userId },
+      select: { currentTokenBalance: true },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (data.transactionType === 'SPENT' && user.currentTokenBalance < data.amount) {
+      throw new InsufficientTokensException(
+        `Insufficient tokens. Required: ${data.amount}, Current: ${user.currentTokenBalance}`,
+        ERROR_CODES.TOKEN_INSUFFICIENT_BALANCE,
+        { required: data.amount, current: user.currentTokenBalance }
+      );
+    }
+
+    return this.createTransactionInTransaction(tx, data);
+  }
+
+  private async createTransactionInTransaction(
+    tx: Prisma.TransactionClient,
+    data: CreateTransactionData
+  ) {
+    const user = await tx.user.findUnique({
+      where: { id: data.userId },
+      select: { currentTokenBalance: true, totalTokensEarned: true, totalTokensSpent: true },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const balanceChange = data.transactionType === 'SPENT' ? -Math.abs(data.amount) : data.amount;
+    const newBalance = user.currentTokenBalance + balanceChange;
+    const transaction = await tx.tokenTransaction.create({
+      data: {
+        userId: data.userId,
+        transactionType: data.transactionType,
+        amount: data.amount,
+        balanceAfter: newBalance,
+        feature: data.feature,
+        referenceId: data.referenceId,
+        description: data.description,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: data.userId },
+      data: {
+        currentTokenBalance: newBalance,
+        ...(data.transactionType === 'SPENT'
+          ? { totalTokensSpent: user.totalTokensSpent + Math.abs(data.amount) }
+          : { totalTokensEarned: user.totalTokensEarned + data.amount }),
+      },
+    });
+
+    return { transaction, newBalance };
   }
 
   /**

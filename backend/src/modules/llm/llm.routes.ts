@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { llmController } from './llm.controller';
-import { validate, authMiddleware, optionalAuthMiddleware } from '@/middleware';
+import { validate, authMiddleware } from '@/middleware';
 import { chatSchema, getHistorySchema } from './llm.validation';
 
 const router = Router();
@@ -27,9 +27,9 @@ const router = Router();
  *   post:
  *     summary: Chat with the AI tutor using RAG (Retrieval-Augmented Generation)
  *     description: |
- *       Send a question to the AI tutor and get a contextual answer based on medical knowledge. 
- *       Authentication is optional - anonymous users can chat but history won't be saved with userId.
- *       Uses Pinecone vector database for semantic search and OpenAI for response generation.
+ *       Send a question to the AI tutor and get a contextual answer based on medical knowledge.
+ *       Authentication is required so private note retrieval is scoped to the current user.
+ *       Shared subject/topic material and explicitly public notes may also be retrieved.
  *     tags: [AI]
  *     security:
  *       - bearerAuth: []
@@ -48,6 +48,9 @@ const router = Router();
  *                 maxLength: 2000
  *                 description: Your question for the AI tutor
  *                 example: "Explain the cardiac cycle and its phases"
+ *               noteId:
+ *                 type: string
+ *                 description: Optional ID of an accessible completed note to restrict retrieval to
  *     responses:
  *       200:
  *         description: AI response generated successfully
@@ -100,12 +103,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post(
-  '/chat',
-  optionalAuthMiddleware,
-  validate(chatSchema),
-  llmController.chat.bind(llmController)
-);
+router.post('/chat', authMiddleware, validate(chatSchema), llmController.chat.bind(llmController));
 
 /**
  * Protected routes (require auth)
@@ -227,10 +225,6 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.delete(
-  '/history',
-  authMiddleware,
-  llmController.clearHistory.bind(llmController)
-);
+router.delete('/history', authMiddleware, llmController.clearHistory.bind(llmController));
 
 export { router as llmRoutes };

@@ -13,12 +13,49 @@ import { countWords } from '@/shared/utils';
 import { chunkText } from '@/shared/utils/text.utils';
 import { llmService } from '@/modules/llm/llm.service';
 import { vectorService } from '@/modules/llm/vector/vector.service';
+import { VectorUpsertParams } from '@/modules/llm/llm.types';
 import Tesseract from 'tesseract.js';
 // @ts-ignore
 import pdfParse from 'pdf-parse';
 const parsePdf = pdfParse as any;
 import * as path from 'path';
 import * as fs from 'fs';
+
+type NoteForVectorIndexing = Pick<
+  UserNote,
+  'id' | 'userId' | 'isPublic' | 'title' | 'originalFileName' | 'topicId' | 'tags'
+> & {
+  topic?: { name: string; subject: { name: string } } | null;
+};
+
+export const buildNoteVectorItems = (
+  note: NoteForVectorIndexing,
+  chunks: string[]
+): VectorUpsertParams[] =>
+  chunks.map((chunk, index) => ({
+    id: `note-${note.id}-chunk-${index}`,
+    text: chunk,
+    metadata: {
+      noteId: note.id,
+      userId: note.userId,
+      isPublic: note.isPublic,
+      title: note.title,
+      documentName: note.originalFileName,
+      originalFileName: note.originalFileName,
+      sourceId: `note-${note.id}-chunk-${index}`,
+      chunkIndex: index,
+      ...(note.topic
+        ? {
+            topicId: note.topicId || undefined,
+            topicName: note.topic.name,
+            subjectName: note.topic.subject.name,
+          }
+        : {}),
+      tags: note.tags.join(', '),
+      contentType: 'user_note',
+      source: 'note_upload',
+    },
+  }));
 
 /**
  * Notes Processor
@@ -41,6 +78,11 @@ export class NotesProcessor {
       // Get note details
       const note = await prisma.userNote.findUnique({
         where: { id: noteId },
+        include: {
+          topic: {
+            include: { subject: true },
+          },
+        },
       });
 
       if (!note) {
@@ -71,6 +113,10 @@ export class NotesProcessor {
         const buffer = await this.downloadFile(note.fileUrl);
         extractedText = buffer.toString('utf-8');
         pageCount = 1;
+      }
+
+      if (!extractedText.trim()) {
+        throw new Error('No readable text could be extracted from this document.');
       }
 
       // Count words
@@ -243,14 +289,14 @@ export class NotesProcessor {
         // Correctly identify the relative path within the public directory
         const relativePath = url.pathname.substring(1); 
         const absolutePath = path.join(process.cwd(), 'public', relativePath);
-        
+
         if (!fs.existsSync(absolutePath)) {
           throw new Error(`Local file not found: ${absolutePath}`);
         }
-        
+
         return fs.readFileSync(absolutePath);
       }
-      
+
       // S3 File
       logger.info(`Downloading file from S3: ${fileUrl}`);
       const url = new URL(fileUrl);
@@ -267,9 +313,11 @@ export class NotesProcessor {
 
       const response = await s3Client.send(command);
       const byteArray = await response.Body?.transformToByteArray();
+
       
       if (!byteArray) throw new Error("Empty response body from S3");
       
+
       return Buffer.from(byteArray);
     } catch (error) {
       logger.error('Failed to download file:', error);
@@ -285,7 +333,7 @@ export class NotesProcessor {
       return await llmService.formatNotes(text);
     } catch (error) {
       logger.error('AI formatting failed, falling back to basic formatting:', error);
-      
+
       // Basic formatting fallback
       const lines = text.split('\n');
       return lines
@@ -312,7 +360,7 @@ export class NotesProcessor {
       return await llmService.summarize(text);
     } catch (error) {
       logger.error('AI summarization failed, falling back to truncation:', error);
-      
+
       if (text.length <= 500) return text;
       const sentences = text.split(/[.!?]+/);
       let summary = '';
@@ -327,26 +375,17 @@ export class NotesProcessor {
   /**
    * Index note content into Pinecone for RAG
    */
-  private async indexNoteToVectorStore(note: UserNote, text: string): Promise<void> {
+  private async indexNoteToVectorStore(note: NoteForVectorIndexing, text: string): Promise<void> {
     try {
       logger.info(`Indexing note ${note.id} to vector store...`);
 
       // Chunk text for embedding
       const chunks = await chunkText(text, 1000, 200);
+      if (chunks.length === 0) {
+        throw new Error(`No indexable text found for note ${note.id}.`);
+      }
 
-      // Prepare metadata for each chunk
-      const vectorItems = chunks.map((chunk, index) => ({
-        id: `note-${note.id}-chunk-${index}`,
-        text: chunk,
-        metadata: {
-          noteId: note.id,
-          userId: note.userId,
-          title: note.title,
-          tags: note.tags.join(', '),
-          contentType: 'user_note',
-          source: 'note_upload',
-        },
-      }));
+      const vectorItems = buildNoteVectorItems(note, chunks);
 
       // Upsert batch to Pinecone
       await vectorService.upsertBatch(vectorItems);
@@ -354,7 +393,7 @@ export class NotesProcessor {
       logger.info(`Successfully indexed note ${note.id} with ${chunks.length} chunks`);
     } catch (error) {
       logger.error(`Failed to index note ${note.id} to Pinecone:`, error);
-      // We don't rethrow here to allow the main processing to complete even if indexing fails
+      throw error;
     }
   }
 

@@ -163,6 +163,7 @@ model User {
   userNotes           UserNote[]
   notifications       Notification[]
   paymentTransactions PaymentTransaction[]
+  llmChatRequests     LlmChatRequest[]
   adminUser           AdminUser?
   createdMaterials    StudyMaterial[]      @relation("CreatedMaterials")
   createdQuestions    Question[]           @relation("CreatedQuestions")
@@ -740,17 +741,36 @@ model LlmChat {
   @@map("llm_chats")
 }
 
+model LlmChatRequest {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idempotencyKey String
+  requestHash    String
+  status         String    @default("PROCESSING")
+  response       String?   @db.Text
+  chatId         String?
+  claimToken     String
+  leaseExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, idempotencyKey])
+  @@index([status, leaseExpiresAt])
+  @@map("llm_chat_requests")
+}
+
 // ==================== RAG INDEX ====================
 
 model RagIndex {
   id        String   @id @default(cuid())
   nodeId    String   @unique
-  nodeType  String   // "subject" | "topic" | "material" | "question"
+  nodeType  String // "subject" | "topic" | "material" | "question"
   title     String
   summary   String   @db.Text
   content   String   @db.Text
   parentId  String?
-  metadata  Json?    // { subjectCode, mbbsYear, difficultyLevel, materialType, questionType }
+  metadata  Json? // { subjectCode, mbbsYear, difficultyLevel, materialType, questionType }
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

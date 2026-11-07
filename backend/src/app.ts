@@ -46,7 +46,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
   })
 );
 
@@ -132,10 +132,14 @@ import { swaggerOptions } from './config/swagger.config';
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Swagger UI endpoint
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'MBBS Mentor API Documentation',
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'MBBS Mentor API Documentation',
+  })
+);
 
 // Swagger JSON endpoint
 app.get('/api-docs.json', (_req: Request, res: Response) => {

@@ -4,7 +4,7 @@
  */
 
 import { cohereClient } from '../clients/cohere.client';
-// Removed unused logger import
+import { logger } from '@/config/logger';
 import { EmbeddingResult } from '../llm.types';
 
 const EMBEDDING_MODEL = 'embed-english-v3.0';
@@ -20,34 +20,45 @@ class EmbeddingService {
    * @returns Embedding vector
    */
   async createEmbedding(
-    text: string, 
-    inputType: 'search_document' | 'search_query' | 'classification' | 'clustering' = 'search_document'
+    text: string,
+    inputType:
+      | 'search_document'
+      | 'search_query'
+      | 'classification'
+      | 'clustering' = 'search_document'
   ): Promise<EmbeddingResult> {
     if (!cohereClient) {
-      throw new Error('Cohere client not initialized. Check COHERE_API_KEY.');
+      const error = new Error('Cohere client not initialized. Check COHERE_API_KEY.');
+      logger.error('Cohere embedding generation failed:', error);
+      throw error;
     }
 
-    const response = await cohereClient.embed({
-      texts: [text.trim()],
-      model: EMBEDDING_MODEL,
-      inputType: inputType,
-    });
-
-    // Check for embeddings in the response
-    // Cohere v3 returns embeddings as a property on the response
-    const embeddings = (response as any).embeddings;
-    
-    if (!embeddings || (Array.isArray(embeddings) && embeddings.length === 0)) {
-      throw new Error('No embedding returned from Cohere');
+    if (!text.trim()) {
+      throw new Error('Cannot generate an embedding for empty text.');
     }
 
-    // Convert to number[] if it's float embeddings
-    const embedding = Array.isArray(embeddings[0]) ? embeddings[0] : [];
+    try {
+      const response = await cohereClient.embed({
+        texts: [text.trim()],
+        model: EMBEDDING_MODEL,
+        inputType,
+      });
 
-    return {
-      embedding,
-      tokensUsed: 0, // Cohere SDK doesn't return tokens in a standard way here
-    };
+      const embeddings = (response as { embeddings?: unknown }).embeddings;
+      const embedding = Array.isArray(embeddings) ? embeddings[0] : undefined;
+      if (
+        !Array.isArray(embedding) ||
+        embedding.length === 0 ||
+        !embedding.every((value) => typeof value === 'number' && Number.isFinite(value))
+      ) {
+        throw new Error('Cohere returned an invalid embedding.');
+      }
+
+      return { embedding, tokensUsed: 0 };
+    } catch (error) {
+      logger.error('Cohere embedding generation failed:', error);
+      throw error;
+    }
   }
 
   /**
@@ -58,31 +69,55 @@ class EmbeddingService {
    */
   async createBatchEmbeddings(
     texts: string[],
-    inputType: 'search_document' | 'search_query' | 'classification' | 'clustering' = 'search_document'
+    inputType:
+      | 'search_document'
+      | 'search_query'
+      | 'classification'
+      | 'clustering' = 'search_document'
   ): Promise<EmbeddingResult[]> {
     if (!cohereClient) {
-      throw new Error('Cohere client not initialized. Check COHERE_API_KEY.');
+      const error = new Error('Cohere client not initialized. Check COHERE_API_KEY.');
+      logger.error('Cohere batch embedding generation failed:', error);
+      throw error;
     }
 
     if (texts.length === 0) return [];
 
-    const response = await cohereClient.embed({
-      texts: texts.map((t) => t.trim()),
-      model: EMBEDDING_MODEL,
-      inputType: inputType,
-    });
-
-    const embeddings = (response as any).embeddings;
-
-    if (!Array.isArray(embeddings)) {
-      throw new Error('Invalid response from Cohere embeddings');
+    if (texts.some((text) => !text.trim())) {
+      throw new Error('Cannot generate embeddings for empty text.');
     }
 
-    return embeddings.map((emb: any) => ({
-      embedding: Array.isArray(emb) ? emb : [],
-      tokensUsed: 0,
-    }));
+    try {
+      const response = await cohereClient.embed({
+        texts: texts.map((text) => text.trim()),
+        model: EMBEDDING_MODEL,
+        inputType,
+      });
+
+      const embeddings = (response as { embeddings?: unknown }).embeddings;
+      if (
+        !Array.isArray(embeddings) ||
+        embeddings.length !== texts.length ||
+        !embeddings.every(
+          (embedding) =>
+            Array.isArray(embedding) &&
+            embedding.length > 0 &&
+            embedding.every((value) => typeof value === 'number' && Number.isFinite(value))
+        )
+      ) {
+        throw new Error('Cohere returned invalid batch embeddings.');
+      }
+
+      return embeddings.map((embedding) => ({
+        embedding: embedding as number[],
+        tokensUsed: 0,
+      }));
+    } catch (error) {
+      logger.error('Cohere batch embedding generation failed:', error);
+      throw error;
+    }
   }
 }
 
+export { EmbeddingService };
 export const embeddingService = new EmbeddingService();

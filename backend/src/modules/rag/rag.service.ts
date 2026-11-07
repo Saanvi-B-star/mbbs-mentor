@@ -9,7 +9,6 @@ import { BuildIndexResponse, QueryRagResponse } from './rag.types';
 import { vectorService } from '../llm/vector/vector.service';
 import { llmService } from '../llm/llm.service';
 
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -86,40 +85,31 @@ class RagService {
     }
   }
 
-
   /**
    * Phase 2 — Query RAG
    * (Completely simulated - should NOT fail)
    */
-  async queryRag(query: string): Promise<QueryRagResponse> {
-    try {
-      logger.info(`[RAG] Querying production index for: "${query}"`);
-
-      // 1. We use the LLMService chat logic which already handles RAG retrieval + augmentation
-      const chatResponse = await llmService.chat({
-        question: query,
-        userId: 'system-agent', // Using a default ID for index-wide queries
-      });
-
-      return {
-        answer: chatResponse.answer,
-        sourcedNodes: chatResponse.sources ? chatResponse.sources.map(src => ({
-          nodeId: src.id,
-          title: src.metadata.topicName || src.metadata.subjectName || 'Medical Context',
-          nodeType: src.metadata.nodeType || 'context'
-        })) : [],
-        tokensUsed: chatResponse.tokensUsed || 0,
-      };
-    } catch (err) {
-      logger.error(`[RAG] QueryRag failed: ${err}`);
-      return {
-        answer: "I'm sorry, I encountered an error while processing your query using the medical context. I will rely on my general medical knowledge instead.",
-        sourcedNodes: [],
-        tokensUsed: 0
-      };
-    }
+  async queryRag(
+    query: string,
+    userId: string,
+    idempotencyKey?: string
+  ): Promise<QueryRagResponse> {
+    logger.info('[RAG] Querying indexed study content.');
+    const chatResponse = await llmService.chat({ question: query, userId, idempotencyKey });
+    return {
+      answer: chatResponse.answer,
+      sourcedNodes: (chatResponse.sources || []).map((source) => ({
+        nodeId: source.id,
+        title:
+          source.metadata.documentName ||
+          source.metadata.topicName ||
+          source.metadata.subjectName ||
+          source.id,
+        nodeType: source.metadata.nodeType || source.metadata.contentType || 'context',
+      })),
+      tokensUsed: chatResponse.tokensUsed ?? 0,
+    };
   }
-
 
   async getIndexStats(): Promise<{
     totalNodes: number;
@@ -129,7 +119,7 @@ class RagService {
     return {
       totalNodes: 312,
       byType: { subject: 12, topic: 85, material: 160, question: 55 },
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   }
 

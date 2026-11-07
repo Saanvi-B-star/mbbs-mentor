@@ -8,6 +8,7 @@ import {
 } from './token.types';
 import { InsufficientTokensException, NotFoundException } from '@/shared/exceptions';
 import { ERROR_CODES } from '@/shared/constants';
+import { Prisma } from '@prisma/client';
 
 /**
  * Token Service
@@ -53,6 +54,43 @@ export class TokenService {
 
     // Create deduction transaction
     const result = await tokenRepository.createTransaction({
+      userId: data.userId,
+      transactionType: 'SPENT',
+      amount: data.amount,
+      feature: data.feature,
+      referenceId: data.referenceId,
+      description: data.description || `Used ${data.amount} tokens for ${data.feature}`,
+    });
+
+    return {
+      transaction: result.transaction,
+      newBalance: result.newBalance,
+    };
+  }
+
+  async deductTokensOnce(
+    data: DeductTokensDto & { referenceId: string }
+  ): Promise<TokenTransactionResponse> {
+    const result = await tokenRepository.createTransactionOnce({
+      userId: data.userId,
+      transactionType: 'SPENT',
+      amount: data.amount,
+      feature: data.feature,
+      referenceId: data.referenceId,
+      description: data.description || `Used ${data.amount} tokens for ${data.feature}`,
+    });
+
+    return {
+      transaction: result.transaction,
+      newBalance: result.newBalance,
+    };
+  }
+
+  async deductTokensOnceInTransaction(
+    tx: Prisma.TransactionClient,
+    data: DeductTokensDto & { referenceId: string }
+  ): Promise<TokenTransactionResponse> {
+    const result = await tokenRepository.createTransactionOnceInTransaction(tx, {
       userId: data.userId,
       transactionType: 'SPENT',
       amount: data.amount,

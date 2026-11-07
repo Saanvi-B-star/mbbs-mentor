@@ -99,8 +99,12 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// TODO: Re-add authMiddleware after testing - currently disabled for dummy response testing
-router.post('/query', validate(queryRagSchema), ragController.query.bind(ragController));
+router.post(
+  '/query',
+  authMiddleware,
+  validate(queryRagSchema),
+  ragController.query.bind(ragController)
+);
 
 /**
  * @swagger

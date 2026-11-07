@@ -15,6 +15,7 @@ import { queueNoteProcessing } from '@/config/queue.config';
 import { tokenService } from '../token/token.service';
 import { logger } from '@/config';
 import { llmService } from '@/modules/llm/llm.service';
+import { vectorService } from '@/modules/llm/vector/vector.service';
 
 /**
  * Notes Service
@@ -174,6 +175,10 @@ export class NotesService {
       data,
     });
 
+    if (data.isPublic !== undefined && data.isPublic !== note.isPublic) {
+      await vectorService.updateNoteVisibility(note.id, userId, updated.isPublic);
+    }
+
     return this.mapNoteToDto(updated);
   }
 
@@ -203,7 +208,6 @@ export class NotesService {
         logger.error(`Failed to delete S3 object for note ${note.id}:`, err);
       }
     }
-
 
     await prisma.userNote.delete({
       where: { id: noteId },
@@ -272,7 +276,6 @@ Return ONLY a JSON array of objects.`;
         },
       ];
     }
-
   }
 
   /**

@@ -5,36 +5,36 @@ import { config } from './environment';
 import { logger } from './logger';
 
 /**
- * AWS S3 Client Configuration (Optional)
+ * AWS S3 Client Configuration 
  * Used for file uploads and storage
  */
 export const s3Client = config.aws.s3.enabled && config.aws.credentials.accessKeyId
   ? new S3Client({
-      region: config.aws.s3.region,
-      credentials: config.aws.credentials as any,
-    })
+    region: config.aws.s3.region,
+    credentials: config.aws.credentials as any,
+  })
   : null;
 
 /**
- * AWS SES Client Configuration (Optional)
+ * AWS SES Client Configuration 
  * Used for sending emails
  */
 export const sesClient = config.aws.ses.enabled && config.aws.credentials.accessKeyId
   ? new SESClient({
-      region: config.aws.ses.region,
-      credentials: config.aws.credentials as any,
-    })
+    region: config.aws.ses.region,
+    credentials: config.aws.credentials as any,
+  })
   : null;
 
 /**
- * AWS Textract Client Configuration (Optional)
+ * AWS Textract Client Configuration 
  * Used for OCR and text extraction from documents
  */
 export const textractClient = config.aws.textract.enabled && config.aws.credentials.accessKeyId
   ? new TextractClient({
-      region: config.aws.textract.region,
-      credentials: config.aws.credentials as any,
-    })
+    region: config.aws.textract.region,
+    credentials: config.aws.credentials as any,
+  })
   : null;
 
 /**

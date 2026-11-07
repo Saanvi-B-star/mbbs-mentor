@@ -5,7 +5,7 @@ CREATE TYPE "GoalType" AS ENUM ('EXAM_PREPARATION', 'CONCEPT_MASTERY', 'CLINICAL
 CREATE TABLE "student_goals" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "goals" "GoalType"[],
+    "goals" "GoalType"[] NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

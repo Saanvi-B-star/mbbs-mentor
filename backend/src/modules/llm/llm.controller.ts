@@ -7,7 +7,6 @@ import { llmService } from './llm.service';
 import { HTTP_STATUS } from '@/shared/constants';
 import { ChatRequest } from './llm.types';
 
-
 /**
  * LLM Controller Class
  */
@@ -37,6 +36,9 @@ class LLMController {
    *                 type: string
    *                 description: The medical question to ask
    *                 example: "Explain the brachial plexus and its clinical significance"
+   *               noteId:
+   *                 type: string
+   *                 description: Optional ID of an accessible completed note to restrict retrieval to
    *     responses:
    *       200:
    *         description: Successful response from AI tutor
@@ -82,8 +84,9 @@ class LLMController {
    */
   async chat(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { question } = req.body as ChatRequest;
+      const { question, noteId } = req.body as ChatRequest;
       const userId = (req.user as any)?.id;
+      const idempotencyKey = req.get('Idempotency-Key')?.trim();
 
       if (!question || typeof question !== 'string' || question.trim().length === 0) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -92,10 +95,26 @@ class LLMController {
         });
         return;
       }
+      if (!userId) {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Authentication required',
+        });
+        return;
+      }
+      if (idempotencyKey && idempotencyKey.length > 200) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Idempotency-Key must not exceed 200 characters',
+        });
+        return;
+      }
 
       const result = await llmService.chat({
         question: question.trim(),
         userId,
+        ...(typeof noteId === 'string' ? { noteId: noteId.trim() } : {}),
+        idempotencyKey,
       });
 
       res.status(HTTP_STATUS.OK).json({

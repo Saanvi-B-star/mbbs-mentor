@@ -16,7 +16,23 @@ class RagController {
   async query(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { query } = req.body as QueryRagRequest;
-      const result = await ragService.queryRag(query);
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Authentication required',
+        });
+        return;
+      }
+      const idempotencyKey = req.get('Idempotency-Key')?.trim();
+      if (idempotencyKey && idempotencyKey.length > 200) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Idempotency-Key must not exceed 200 characters',
+        });
+        return;
+      }
+      const result = await ragService.queryRag(query, userId, idempotencyKey);
       res.status(HTTP_STATUS.OK).json({ success: true, data: result });
     } catch (error) {
       next(error);

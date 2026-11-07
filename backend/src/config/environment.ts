@@ -58,13 +58,17 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APPLE_CLIENT_ID: z.string().optional(),
   APPLE_CLIENT_SECRET: z.string().optional(),
-  
+
   // Groq AI (fallback/alternative to OpenRouter)
   GROQ_API_KEY: z.string().optional(),
   GROQ_DEFAULT_MODEL: z.string().default('llama3-8b-8192'),
 
   // Cohere (for embeddings)
   COHERE_API_KEY: z.string().optional(),
+
+  // RAG retrieval
+  RAG_TOP_K: z.coerce.number().int().positive().default(20),
+  RAG_RERANK_TOP_K: z.coerce.number().int().positive().default(5),
 });
 
 /**
@@ -97,9 +101,10 @@ export const config = {
   isDevelopment: env.NODE_ENV === 'development',
   isProduction: env.NODE_ENV === 'production',
   isTest: env.NODE_ENV === 'test',
-  serverUrl: env.NODE_ENV === 'production' 
-    ? 'https://your-production-domain.com' 
-    : `http://localhost:${env.PORT}`,
+  serverUrl:
+    env.NODE_ENV === 'production'
+      ? 'https://your-production-domain.com'
+      : `http://localhost:${env.PORT}`,
 
   // Database
   database: {
@@ -172,6 +177,11 @@ export const config = {
   pinecone: {
     apiKey: env.PINECONE_API_KEY,
     indexName: env.PINECONE_INDEX_NAME,
+  },
+
+  rag: {
+    topK: env.RAG_TOP_K,
+    rerankTopK: env.RAG_RERANK_TOP_K,
   },
 
   // Razorpay (Optional)

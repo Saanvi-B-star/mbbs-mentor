@@ -12,6 +12,7 @@ export const chatSchema = z.object({
       .min(3, 'Question must be at least 3 characters')
       .max(2000, 'Question must not exceed 2000 characters')
       .trim(),
+    noteId: z.string().trim().min(1).max(200).optional(),
   }),
 });
 

@@ -57,7 +57,7 @@ export default function AIAssistantPage() {
     try {
       const res = await apiClient.get("/llm/history");
       const historyData = res.data?.data || [];
-      
+
       if (historyData.length > 0) {
         const historyMessages: Message[] = historyData.flatMap((chat: any) => [
           {
@@ -71,10 +71,15 @@ export default function AIAssistantPage() {
             role: "assistant",
             content: chat.response,
             timestamp: new Date(chat.createdAt),
-          }
+          },
         ]);
-        
-        setMessages([...initialMessages, ...historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())]);
+
+        setMessages([
+          ...initialMessages,
+          ...historyMessages.sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+          ),
+        ]);
       }
     } catch (error) {
       console.error("Failed to fetch chat history:", error);
@@ -82,7 +87,12 @@ export default function AIAssistantPage() {
   };
 
   const handleClearHistory = async () => {
-    if (!confirm("Are you sure you want to clear your chat history? This cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to clear your chat history? This cannot be undone.",
+      )
+    )
+      return;
     try {
       await apiClient.delete("/llm/history");
       setMessages(initialMessages);
@@ -94,8 +104,9 @@ export default function AIAssistantPage() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    const requestId = crypto.randomUUID();
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: requestId,
       role: "user",
       content: input,
       timestamp: new Date(),
@@ -106,10 +117,15 @@ export default function AIAssistantPage() {
     setIsTyping(true);
 
     try {
-      const res = await apiClient.post("/llm/chat", { question: input });
+      const res = await apiClient.post(
+        "/llm/chat",
+        { question: input },
+        { headers: { "Idempotency-Key": requestId } },
+      );
       const result = res.data?.data;
-      const answer = result?.answer || "Sorry, I couldn't generate a response right now.";
-      
+      const answer =
+        result?.answer || "Sorry, I couldn't generate a response right now.";
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -150,7 +166,12 @@ export default function AIAssistantPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={handleClearHistory} className="text-gray-500 hover:text-red-600">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearHistory}
+            className="text-gray-500 hover:text-red-600"
+          >
             Clear History
           </Button>
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5">
@@ -182,8 +203,8 @@ export default function AIAssistantPage() {
 
                   <div
                     className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-sm ${
-                      message.role === "user" 
-                        ? "bg-blue-600 text-white rounded-tr-none" 
+                      message.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-none"
                         : "bg-white border border-gray-100 text-gray-900 rounded-tl-none"
                     }`}
                   >
@@ -191,10 +212,22 @@ export default function AIAssistantPage() {
                       <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-headings:text-blue-900 prose-headings:font-bold prose-ul:my-2 prose-li:my-0 mt-1">
                         <ReactMarkdown
                           components={{
-                            code({ node, inline, className, children, ...props }: any) {
-                              const match = /language-(\w+)/.exec(className || "");
+                            code({
+                              node,
+                              inline,
+                              className,
+                              children,
+                              ...props
+                            }: any) {
+                              const match = /language-(\w+)/.exec(
+                                className || "",
+                              );
                               if (!inline && match && match[1] === "mermaid") {
-                                return <Mermaid chart={String(children).replace(/\n$/, "")} />;
+                                return (
+                                  <Mermaid
+                                    chart={String(children).replace(/\n$/, "")}
+                                  />
+                                );
                               }
                               return (
                                 <code className={className} {...props}>
@@ -212,15 +245,23 @@ export default function AIAssistantPage() {
                         {message.content}
                       </p>
                     )}
-                    
+
                     {message.sources && message.sources.length > 0 && (
-                      <div className={`mt-4 pt-4 border-t ${message.role === "user" ? "border-white/20" : "border-gray-100"}`}>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${message.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
+                      <div
+                        className={`mt-4 pt-4 border-t ${message.role === "user" ? "border-white/20" : "border-gray-100"}`}
+                      >
+                        <p
+                          className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${message.role === "user" ? "text-blue-100" : "text-gray-500"}`}
+                        >
                           Sources from your notes:
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {message.sources.map((source, idx) => (
-                            <Badge key={idx} variant="secondary" className={`text-[10px] border-none ${message.role === "user" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
+                            <Badge
+                              key={idx}
+                              variant="secondary"
+                              className={`text-[10px] border-none ${message.role === "user" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}
+                            >
                               {source.metadata?.title || "Untitled Note"}
                             </Badge>
                           ))}
@@ -228,14 +269,21 @@ export default function AIAssistantPage() {
                       </div>
                     )}
 
-                    <p className={`text-[10px] mt-2 ${message.role === "user" ? "text-blue-100" : "text-gray-400"}`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    <p
+                      className={`text-[10px] mt-2 ${message.role === "user" ? "text-blue-100" : "text-gray-400"}`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
 
                   {message.role === "user" && (
                     <Avatar className="h-8 w-8 bg-blue-500 flex-shrink-0">
-                      <AvatarFallback className="text-white text-xs font-semibold">U</AvatarFallback>
+                      <AvatarFallback className="text-white text-xs font-semibold">
+                        U
+                      </AvatarFallback>
                     </Avatar>
                   )}
                 </div>
@@ -251,8 +299,14 @@ export default function AIAssistantPage() {
                   <div className="bg-gray-100 rounded-xl p-4">
                     <div className="flex gap-1">
                       <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-                      <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" style={{ animationDelay: "0.1s" }} />
-                      <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" style={{ animationDelay: "0.2s" }} />
+                      <div
+                        className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"
+                        style={{ animationDelay: "0.1s" }}
+                      />
+                      <div
+                        className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"
+                        style={{ animationDelay: "0.2s" }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -316,23 +370,33 @@ export default function AIAssistantPage() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-start gap-3">
                 <span className="text-blue-600 font-bold mt-0.5">•</span>
-                <span className="text-gray-700">Explain complex medical concepts</span>
+                <span className="text-gray-700">
+                  Explain complex medical concepts
+                </span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-blue-600 font-bold mt-0.5">•</span>
-                <span className="text-gray-700">Provide NMC-aligned learning resources</span>
+                <span className="text-gray-700">
+                  Provide NMC-aligned learning resources
+                </span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-blue-600 font-bold mt-0.5">•</span>
-                <span className="text-gray-700">Answer doubts from any subject</span>
+                <span className="text-gray-700">
+                  Answer doubts from any subject
+                </span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-blue-600 font-bold mt-0.5">•</span>
-                <span className="text-gray-700">Generate practice questions</span>
+                <span className="text-gray-700">
+                  Generate practice questions
+                </span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-blue-600 font-bold mt-0.5">•</span>
-                <span className="text-gray-700">Create study plans and tips</span>
+                <span className="text-gray-700">
+                  Create study plans and tips
+                </span>
               </div>
             </CardContent>
           </Card>

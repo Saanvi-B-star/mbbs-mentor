@@ -7,7 +7,9 @@
 
 export interface ChatRequest {
   question: string;
-  userId?: string;
+  userId: string;
+  noteId?: string;
+  idempotencyKey?: string;
 }
 
 export interface ChatResponse {
@@ -17,16 +19,30 @@ export interface ChatResponse {
   sources?: VectorMatch[];
 }
 
+export type ChatRequestClaim =
+  | { status: 'claimed'; id: string; claimToken: string }
+  | { status: 'completed'; response: ChatResponse };
+
 // ==================== VECTOR TYPES ====================
 
 export interface VectorMetadata {
   text: string;
+  userId?: string;
+  noteId?: string;
+  isPublic?: boolean;
+  documentName?: string;
+  originalFileName?: string;
+  source?: string;
+  sourceId?: string;
+  pageNumber?: number;
+  chunkIndex?: number;
   topicId?: string;
   topicName?: string;
   subjectId?: string;
   subjectName?: string;
   contentType?: string;
-  [key: string]: string | undefined;
+  nodeType?: string;
+  [key: string]: string | number | boolean | string[] | undefined;
 }
 
 export interface VectorUpsertParams {
@@ -39,6 +55,7 @@ export interface VectorMatch {
   id: string;
   score: number;
   metadata: VectorMetadata;
+  citationId?: string;
 }
 
 export interface VectorSearchResult {
@@ -64,6 +81,7 @@ export interface LLMCompletionResult {
   content: string;
   tokensUsed: number | null;
   model: string;
+  finishReason?: string | null;
 }
 
 // ==================== EMBEDDING TYPES ====================
